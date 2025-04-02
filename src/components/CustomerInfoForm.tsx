@@ -5,7 +5,7 @@ import { z } from 'zod';
 import InputMask from 'react-input-mask';
 import { useAtom } from 'jotai';
 import { CustomerInfo, maritalStatusOptions } from '../types/form';
-import { User, Phone, Mail, Briefcase, FileText, Loader2 } from 'lucide-react';
+import { User, Phone, Mail, Briefcase, FileText, Loader2, Trash2, ArrowRight } from 'lucide-react';
 import { formProgressAtom } from '../store/form';
 
 const schema = z.object({
@@ -27,6 +27,7 @@ export default function CustomerInfoForm() {
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors }
   } = useForm<CustomerInfo>({
     resolver: zodResolver(schema),
@@ -39,10 +40,7 @@ export default function CustomerInfoForm() {
   const onSubmit = async (data: CustomerInfo) => {
     try {
       setIsSubmitting(true);
-      
-      // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
       setFormProgress(prev => ({
         ...prev,
         currentStep: 'installation-location',
@@ -210,7 +208,20 @@ export default function CustomerInfoForm() {
           </div>
         </div>
 
-        <div className="flex justify-end">
+        <div className="flex justify-between pt-4">
+          <button
+            type="button"
+            onClick={() => {
+              reset({
+                nationality: 'Brasileiro(a)'
+              });
+            }}
+            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 flex items-center"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Limpar Campos
+          </button>
+
           <button
             type="submit"
             disabled={isSubmitting}
@@ -222,7 +233,10 @@ export default function CustomerInfoForm() {
                 Processando...
               </>
             ) : (
-              'Próximo'
+              <>
+                Próximo
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </>
             )}
           </button>
         </div>

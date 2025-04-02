@@ -1,12 +1,12 @@
 import React from 'react';
 import { useAtom } from 'jotai';
 import { formProgressAtom } from '../store/form';
-import { FileText, User, MapPin, Zap, DollarSign, Loader2, FileSignature } from 'lucide-react';
+import { FileText, User, MapPin, Zap, DollarSign, Loader2, FileSignature, ArrowLeft } from 'lucide-react';
 import { generateContract } from '../utils/generateContract';
 import { generatePowerOfAttorney } from '../utils/generatePowerOfAttorney';
 
 export default function ReviewForm() {
-  const [formProgress] = useAtom(formProgressAtom);
+  const [formProgress, setFormProgress] = useAtom(formProgressAtom);
   const [isGeneratingContract, setIsGeneratingContract] = React.useState(false);
   const [isGeneratingPowerOfAttorney, setIsGeneratingPowerOfAttorney] = React.useState(false);
 
@@ -15,7 +15,6 @@ export default function ReviewForm() {
       setIsGeneratingContract(true);
       const contractBlob = await generateContract(formProgress.data);
       
-      // Create a download link
       const url = window.URL.createObjectURL(contractBlob);
       const link = document.createElement('a');
       link.href = url;
@@ -23,7 +22,6 @@ export default function ReviewForm() {
       document.body.appendChild(link);
       link.click();
       
-      // Cleanup
       link.parentNode?.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (error) {
@@ -39,7 +37,6 @@ export default function ReviewForm() {
       setIsGeneratingPowerOfAttorney(true);
       const powerOfAttorneyBlob = await generatePowerOfAttorney(formProgress.data);
       
-      // Create a download link
       const url = window.URL.createObjectURL(powerOfAttorneyBlob);
       const link = document.createElement('a');
       link.href = url;
@@ -47,7 +44,6 @@ export default function ReviewForm() {
       document.body.appendChild(link);
       link.click();
       
-      // Cleanup
       link.parentNode?.removeChild(link);
       window.URL.revokeObjectURL(url);
     } catch (error) {
@@ -183,42 +179,58 @@ export default function ReviewForm() {
         </div>
 
         {/* Generate Documents Buttons */}
-        <div className="flex justify-end space-x-4">
+        <div className="flex flex-wrap gap-4 justify-between">
           <button
-            onClick={handleGeneratePowerOfAttorney}
-            disabled={isGeneratingPowerOfAttorney}
-            className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            type="button"
+            onClick={() =>
+              setFormProgress(prev => ({
+                ...prev,
+                currentStep: 'financial-terms'
+              }))
+            }
+            className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 flex items-center"
           >
-            {isGeneratingPowerOfAttorney ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Gerando Procuração...
-              </>
-            ) : (
-              <>
-                <FileSignature className="w-4 h-4 mr-2" />
-                Gerar Procuração
-              </>
-            )}
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Voltar
           </button>
 
-          <button
-            onClick={handleGenerateContract}
-            disabled={isGeneratingContract}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-          >
-            {isGeneratingContract ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Gerando Contrato...
-              </>
-            ) : (
-              <>
-                <FileText className="w-4 h-4 mr-2" />
-                Gerar Contrato
-              </>
-            )}
-          </button>
+          <div className="flex gap-4 ml-auto">
+            <button
+              onClick={handleGeneratePowerOfAttorney}
+              disabled={isGeneratingPowerOfAttorney}
+              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            >
+              {isGeneratingPowerOfAttorney ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Gerando Procuração...
+                </>
+              ) : (
+                <>
+                  <FileSignature className="w-4 h-4 mr-2" />
+                  Gerar Procuração
+                </>
+              )}
+            </button>
+
+            <button
+              onClick={handleGenerateContract}
+              disabled={isGeneratingContract}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            >
+              {isGeneratingContract ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Gerando Contrato...
+                </>
+              ) : (
+                <>
+                  <FileText className="w-4 h-4 mr-2" />
+                  Gerar Contrato
+                </>
+              )}
+            </button>
+          </div>
         </div>
       </div>
     </div>

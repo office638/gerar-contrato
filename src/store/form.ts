@@ -50,3 +50,9 @@ export const formSteps: { id: FormStep; label: string; icon: keyof typeof import
   { id: 'financial-terms', label: 'Termos Financeiros', icon: 'DollarSign' },
   { id: 'review', label: 'Revisão e Geração', icon: 'FileText' }
 ];
+
+// ✅ Função auxiliar para obter o passo anterior com base no passo atual
+export const getPreviousStep = (currentStep: FormStep): FormStep | null => {
+  const currentIndex = formSteps.findIndex(step => step.id === currentStep);
+  return currentIndex > 0 ? formSteps[currentIndex - 1].id : null;
+};
