@@ -173,22 +173,7 @@ export default function InstallationLocationForm() {
             )}
           </div>
 
-          <div className="space-y-2">
-            <label className="flex items-center text-sm font-medium text-gray-700">
-              <Hash size={18} className="mr-2" />
-              Código da Unidade Consumidora (UC)
-            </label>
-            <input
-              type="text"
-              {...register('utilityCode')}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Código UC"
-            />
-            {errors.utilityCode && (
-              <p className="text-red-500 text-sm">{errors.utilityCode.message}</p>
-            )}
-          </div>
-
+    
           <div className="space-y-2">
             <label className="flex items-center text-sm font-medium text-gray-700">
               <Zap size={18} className="mr-2" />
