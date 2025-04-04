@@ -40,14 +40,19 @@ function App() {
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-6">
+            <button 
+              onClick={() => setFormProgress(prev => ({ ...prev, currentStep: 'customer-info', completedSteps: [], data: {} }))}
+              className="flex items-center space-x-6 hover:opacity-80 transition-opacity"
+            >
               <Sun className="h-8 w-8 text-yellow-500 mr-3" />
               <h1 className="text-2xl font-bold text-gray-900">
                 Gerador de Contratos de Energia Solar
               </h1>
+            </button>
+            <div className="flex items-center space-x-6">
               <CustomerSearch />
+              <ExcelImportExport />
             </div>
-            <ExcelImportExport />
           </div>
         </div>
       </header>

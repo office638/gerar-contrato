@@ -5,9 +5,11 @@ import { z } from 'zod';
 import InputMask from 'react-input-mask';
 import { useAtom } from 'jotai';
 import { CustomerInfo, maritalStatusOptions } from '../types/form';
-import { User, Phone, Mail, Briefcase, FileText, Loader2, Trash2, ArrowRight } from 'lucide-react';
+import { User, Phone, Mail, Briefcase, FileText, Loader2, Trash2, ArrowRight, AlertCircle } from 'lucide-react';
 import { formProgressAtom } from '../store/form';
 import { useSupabaseMutation } from '../hooks/useSupabaseMutation';
+import { supabase } from '../lib/supabase';
+import { useEffect } from 'react';
 
 const schema = z.object({
   fullName: z.string().min(3).max(100),
@@ -24,12 +26,15 @@ const schema = z.object({
 export default function CustomerInfoForm() {
   const [formProgress, setFormProgress] = useAtom(formProgressAtom);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [cpfError, setCpfError] = React.useState<string | null>(null);
   const { mutateAsync: saveCustomer } = useSupabaseMutation('customers');
 
   const {
     register,
     handleSubmit,
     reset,
+    setValue,
+    watch,
     formState: { errors }
   } = useForm<CustomerInfo>({
     resolver: zodResolver(schema),
@@ -39,9 +44,51 @@ export default function CustomerInfoForm() {
     }
   });
 
+  const cpf = watch('cpf');
+
+  // Update form when customer data changes
+  useEffect(() => {
+    if (formProgress.data.customerInfo) {
+      Object.entries(formProgress.data.customerInfo).forEach(([key, value]) => {
+        setValue(key as keyof CustomerInfo, value);
+      });
+    }
+  }, [formProgress.data.customerInfo, setValue]);
+
+  // Check if CPF exists when the field loses focus
+  const checkCpfExists = async (cpf: string) => {
+    if (!cpf || cpf.includes('_')) return; // Don't check incomplete CPFs
+    
+    try {
+      const { data, error } = await supabase
+        .from('customers')
+        .select('id, full_name')
+        .eq('cpf', cpf)
+        .single();
+
+      if (data) {
+        setCpfError(`CPF já cadastrado para o cliente: ${data.full_name}`);
+        return true;
+      } else {
+        setCpfError(null);
+        return false;
+      }
+    } catch (error) {
+      console.error('Error checking CPF:', error);
+      return false;
+    }
+  };
+
   const onSubmit = async (data: CustomerInfo) => {
     try {
       setIsSubmitting(true);
+      
+      // Check CPF one last time before submitting
+      const cpfExists = await checkCpfExists(data.cpf);
+      if (cpfExists) {
+        setIsSubmitting(false);
+        return;
+      }
       
       const savedCustomer = await saveCustomer({
         full_name: data.fullName,
@@ -67,6 +114,9 @@ export default function CustomerInfoForm() {
       }));
     } catch (error) {
       console.error('Error saving customer info:', error);
+      if (error.message?.includes('customers_cpf_key')) {
+        setCpfError('Este CPF já está cadastrado no sistema.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -121,11 +171,17 @@ export default function CustomerInfoForm() {
             <InputMask
               mask="999.999.999-99"
               {...register('cpf')}
-              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              onBlur={(e) => checkCpfExists(e.target.value)}
+              className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                cpfError ? 'border-red-500' : ''
+              }`}
               placeholder="000.000.000-00"
             />
-            {errors.cpf && (
-              <p className="text-red-500 text-sm">{errors.cpf.message}</p>
+            {(errors.cpf || cpfError) && (
+              <p className="text-red-500 text-sm flex items-center">
+                <AlertCircle size={16} className="mr-1" />
+                {errors.cpf?.message || cpfError}
+              </p>
             )}
           </div>
 
@@ -230,6 +286,7 @@ export default function CustomerInfoForm() {
               reset({
                 nationality: 'Brasileiro(a)'
               });
+              setCpfError(null);
             }}
             className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 flex items-center"
           >
@@ -239,7 +296,7 @@ export default function CustomerInfoForm() {
 
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || !!cpfError}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
           >
             {isSubmitting ? (
