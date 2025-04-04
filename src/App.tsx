@@ -9,6 +9,10 @@ import { Sun } from 'lucide-react';
 import ProgressBar from './components/ProgressBar';
 import { formProgressAtom } from './store/form';
 import ExcelImportExport from './components/ExcelImportExport';
+import CustomerSearch from './components/CustomerSearch';
+import { QueryClient, QueryClientProvider } from 'react-query';
+
+const queryClient = new QueryClient();
 
 function App() {
   const [formProgress] = useAtom(formProgressAtom);
@@ -31,15 +35,17 @@ function App() {
   };
 
   return (
+    <QueryClientProvider client={queryClient}>
     <div className="min-h-screen bg-gray-50">
       <header className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
-            <div className="flex items-center">
+            <div className="flex items-center space-x-6">
               <Sun className="h-8 w-8 text-yellow-500 mr-3" />
               <h1 className="text-2xl font-bold text-gray-900">
                 Gerador de Contratos de Energia Solar
               </h1>
+              <CustomerSearch />
             </div>
             <ExcelImportExport />
           </div>
@@ -51,6 +57,7 @@ function App() {
         {renderCurrentStep()}
       </main>
     </div>
+    </QueryClientProvider>
   );
 }
 

@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAtom } from 'jotai';
 import { formProgressAtom } from '../store/form';
+import { useSupabaseMutation } from '../hooks/useSupabaseMutation';
 import { PaymentMethod, paymentMethods } from '../types/form';
 import { DollarSign, CalendarDays, Loader2, Trash2, ArrowLeft, ArrowRight } from 'lucide-react';
 import DatePicker from 'react-datepicker';
@@ -23,6 +24,8 @@ type FinancialTermsFormData = z.infer<typeof schema>;
 export default function FinancialTermsForm() {
   const [formProgress, setFormProgress] = useAtom(formProgressAtom);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const { mutateAsync: saveFinancialTerms } = useSupabaseMutation('financial_terms');
+  const { mutateAsync: saveInstallment } = useSupabaseMutation('installments');
 
   const {
     register,
@@ -67,6 +70,20 @@ export default function FinancialTermsForm() {
   const onSubmit = async (data: FinancialTermsFormData) => {
     try {
       setIsSubmitting(true);
+      
+      const financialTerms = await saveFinancialTerms({
+        customer_id: formProgress.data.customerId,
+        total_amount: data.totalAmount
+      });
+      
+      await Promise.all(data.installments.map(installment => 
+        saveInstallment({
+          financial_terms_id: financialTerms.id,
+          method: installment.method,
+          amount: installment.amount,
+          due_date: installment.dueDate
+        })
+      ));
 
       const processedData = {
         ...data,

@@ -5,6 +5,7 @@ import { z } from 'zod';
 import InputMask from 'react-input-mask';
 import { useAtom } from 'jotai';
 import { formProgressAtom } from '../store/form';
+import { useSupabaseMutation } from '../hooks/useSupabaseMutation';
 import { MapPin, Building2, Hash, Home, Loader2, Zap, ArrowLeft, ArrowRight, Trash2 } from 'lucide-react';
 
 
@@ -36,6 +37,7 @@ const installationTypes = [
 export default function InstallationLocationForm() {
   const [formProgress, setFormProgress] = useAtom(formProgressAtom);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const { mutateAsync: saveLocation } = useSupabaseMutation('installation_locations');
 
   const {
   register,
@@ -51,7 +53,20 @@ export default function InstallationLocationForm() {
   const onSubmit = async (data: InstallationLocation) => {
     try {
       setIsSubmitting(true);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      await saveLocation({
+        customer_id: formProgress.data.customerId,
+        street: data.street,
+        number: data.number,
+        neighborhood: data.neighborhood,
+        city: data.city,
+        state: data.state,
+        zip_code: data.zipCode,
+        utility_code: data.utilityCode,
+        utility_company: data.utilityCompany,
+        installation_type: data.installationType
+      });
+      
       setFormProgress(prev => ({
         ...prev,
         currentStep: 'technical-config',

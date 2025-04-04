@@ -7,6 +7,7 @@ import { useAtom } from 'jotai';
 import { CustomerInfo, maritalStatusOptions } from '../types/form';
 import { User, Phone, Mail, Briefcase, FileText, Loader2, Trash2, ArrowRight } from 'lucide-react';
 import { formProgressAtom } from '../store/form';
+import { useSupabaseMutation } from '../hooks/useSupabaseMutation';
 
 const schema = z.object({
   fullName: z.string().min(3).max(100),
@@ -23,6 +24,7 @@ const schema = z.object({
 export default function CustomerInfoForm() {
   const [formProgress, setFormProgress] = useAtom(formProgressAtom);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const { mutateAsync: saveCustomer } = useSupabaseMutation('customers');
 
   const {
     register,
@@ -40,14 +42,27 @@ export default function CustomerInfoForm() {
   const onSubmit = async (data: CustomerInfo) => {
     try {
       setIsSubmitting(true);
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const savedCustomer = await saveCustomer({
+        full_name: data.fullName,
+        cpf: data.cpf,
+        rg: data.rg,
+        issuing_authority: data.issuingAuthority,
+        profession: data.profession,
+        nationality: data.nationality,
+        phone: data.phone,
+        email: data.email,
+        marital_status: data.maritalStatus
+      });
+      
       setFormProgress(prev => ({
         ...prev,
         currentStep: 'installation-location',
         completedSteps: [...prev.completedSteps, 'customer-info'],
         data: {
           ...prev.data,
-          customerInfo: data
+          customerInfo: data,
+          customerId: savedCustomer.id
         }
       }));
     } catch (error) {

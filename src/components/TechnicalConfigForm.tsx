@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAtom } from 'jotai';
 import { formProgressAtom } from '../store/form';
+import { useSupabaseMutation } from '../hooks/useSupabaseMutation';
 import { TechnicalConfig, inverterBrands, solarModuleBrands, mountTypes } from '../types/form';
 import { Loader2, Zap, DollarSign as Solar, Wrench, Calendar, ArrowLeft, ArrowRight, Trash2 } from 'lucide-react';
 
@@ -33,6 +34,7 @@ const schema = z.object({
 export default function TechnicalConfigForm() {
   const [formProgress, setFormProgress] = useAtom(formProgressAtom);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const { mutateAsync: saveTechnicalConfig } = useSupabaseMutation('technical_configs');
   const [showInverter2, setShowInverter2] = React.useState(false);
 
   const {
@@ -51,7 +53,24 @@ export default function TechnicalConfigForm() {
   const onSubmit = async (data: TechnicalConfig) => {
     try {
       setIsSubmitting(true);
-
+      
+      await saveTechnicalConfig({
+        customer_id: formProgress.data.customerId,
+        inverter1_brand: data.inverter1.brand,
+        inverter1_power: data.inverter1.power,
+        inverter1_quantity: data.inverter1.quantity,
+        inverter1_warranty_period: data.inverter1.warrantyPeriod,
+        inverter2_brand: data.inverter2?.brand,
+        inverter2_power: data.inverter2?.power,
+        inverter2_quantity: data.inverter2?.quantity,
+        inverter2_warranty_period: data.inverter2?.warrantyPeriod,
+        solar_modules_brand: data.solarModules.brand,
+        solar_modules_power: data.solarModules.power,
+        solar_modules_quantity: data.solarModules.quantity,
+        installation_type: data.installationType,
+        installation_days: data.installationDays
+      });
+      
       setFormProgress(prev => ({
         ...prev,
         currentStep: 'financial-terms',
