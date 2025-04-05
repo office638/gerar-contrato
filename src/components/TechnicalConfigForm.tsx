@@ -34,6 +34,7 @@ const schema = z.object({
 export default function TechnicalConfigForm() {
   const [formProgress, setFormProgress] = useAtom(formProgressAtom);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
   const { mutateAsync: saveTechnicalConfig } = useSupabaseMutation('technical_configs');
   const [showInverter2, setShowInverter2] = React.useState(false);
 
@@ -53,23 +54,47 @@ export default function TechnicalConfigForm() {
   const onSubmit = async (data: TechnicalConfig) => {
     try {
       setIsSubmitting(true);
+      setError(null);
       
-      await saveTechnicalConfig({
-        customer_id: formProgress.data.customerId,
+      // Validate required IDs
+      if (!formProgress.data.customerId) {
+        throw new Error('Por favor, preencha as informações do cliente primeiro.');
+      }
+
+      // Prepare inverter2 data based on showInverter2 state
+      const inverter2Data = showInverter2 ? {
+        inverter2_brand: data.inverter2?.brand || null,
+        inverter2_power: data.inverter2?.power || null,
+        inverter2_quantity: data.inverter2?.quantity || null,
+        inverter2_warranty_period: data.inverter2?.warrantyPeriod || null
+      } : {
+        inverter2_brand: null,
+        inverter2_power: null,
+        inverter2_quantity: null,
+        inverter2_warranty_period: null
+      };
+
+      // Prepare the complete payload
+      const payload = {
+        id: formProgress.data.technicalConfigId,
+        customer_id: formProgress.data.customerId || null,
         inverter1_brand: data.inverter1.brand,
         inverter1_power: data.inverter1.power,
         inverter1_quantity: data.inverter1.quantity,
         inverter1_warranty_period: data.inverter1.warrantyPeriod,
-        inverter2_brand: data.inverter2?.brand,
-        inverter2_power: data.inverter2?.power,
-        inverter2_quantity: data.inverter2?.quantity,
-        inverter2_warranty_period: data.inverter2?.warrantyPeriod,
+        ...inverter2Data,
         solar_modules_brand: data.solarModules.brand,
         solar_modules_power: data.solarModules.power,
         solar_modules_quantity: data.solarModules.quantity,
         installation_type: data.installationType,
         installation_days: data.installationDays
-      });
+      };
+
+      const savedConfig = await saveTechnicalConfig(payload);
+
+      if (!savedConfig || !savedConfig.id) {
+        throw new Error('Failed to save technical configuration: No valid response received');
+      }
       
       setFormProgress(prev => ({
         ...prev,
@@ -77,11 +102,16 @@ export default function TechnicalConfigForm() {
         completedSteps: [...prev.completedSteps, 'technical-config'],
         data: {
           ...prev.data,
-          technicalConfig: data
+          technicalConfig: data,
+          technicalConfigId: savedConfig.id
         }
       }));
     } catch (error) {
       console.error('Error saving technical config:', error);
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Failed to save technical configuration. Please try again.';
+      setError(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -90,6 +120,12 @@ export default function TechnicalConfigForm() {
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
       <h2 className="text-2xl font-bold text-gray-800 mb-6">Configuração Técnica do Sistema</h2>
+
+      {error && (
+        <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
+          {error}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         {/* Inversor Principal */}
@@ -326,33 +362,31 @@ export default function TechnicalConfigForm() {
           </button>
 
           <button
-  type="button"
-  onClick={() => {
-    reset({
-      inverter1: {
-        brand: '',
-        power: 0,
-        quantity: 0,
-        warrantyPeriod: 0
-      },
-      solarModules: {
-        brand: '',
-        power: 0,
-        quantity: 0
-      },
-      installationType: 'Roof',
-      installationDays: 0,
-      otherTypeDescription: ''
-    });
-    setShowInverter2(false);
-  }}
-  className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 flex items-center"
->
-  <Trash2 className="w-4 h-4 mr-2" />
-  Limpar Campos
-</button>
-
-
+            type="button"
+            onClick={() => {
+              reset({
+                inverter1: {
+                  brand: '',
+                  power: 0,
+                  quantity: 0,
+                  warrantyPeriod: 0
+                },
+                solarModules: {
+                  brand: '',
+                  power: 0,
+                  quantity: 0
+                },
+                installationType: 'Roof',
+                installationDays: 0,
+                otherTypeDescription: ''
+              });
+              setShowInverter2(false);
+            }}
+            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 flex items-center"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Limpar Campos
+          </button>
 
           <button
             type="submit"

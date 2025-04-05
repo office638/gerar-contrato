@@ -93,6 +93,9 @@ export type FormProgress = {
   completedSteps: FormStep[];
   data: {
     customerId?: string;
+    installationLocationId?: string;
+    technicalConfigId?: string;
+    financialTermsId?: string;
     customerInfo?: CustomerInfo;
     installationLocation?: InstallationLocation;
     technicalConfig?: TechnicalConfig;

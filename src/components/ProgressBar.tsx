@@ -11,13 +11,20 @@ export default function ProgressBar() {
     const stepIndex = formSteps.findIndex(step => step.id === stepId);
     const currentIndex = formSteps.findIndex(step => step.id === formProgress.currentStep);
     
+    // Return false if either index is invalid
+    if (stepIndex === -1 || currentIndex === -1) {
+      return false;
+    }
+    
     // Can always navigate to current step or previous completed steps
     if (stepId === formProgress.currentStep || formProgress.completedSteps.includes(stepId)) {
       return true;
     }
     
-    // Can navigate to next step only if current step is completed
-    if (stepIndex === currentIndex + 1 && formProgress.completedSteps.includes(formSteps[currentIndex].id)) {
+    // Can navigate to next step only if current step is completed and current step exists
+    if (stepIndex === currentIndex + 1 && 
+        formSteps[currentIndex] && 
+        formProgress.completedSteps.includes(formSteps[currentIndex].id)) {
       return true;
     }
     

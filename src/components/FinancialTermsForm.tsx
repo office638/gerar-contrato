@@ -77,11 +77,25 @@ export default function FinancialTermsForm() {
   const onSubmit = async (data: FinancialTermsFormData) => {
     try {
       setIsSubmitting(true);
+
+      // Validate required IDs
+      if (!formProgress.data.customerId) {
+        throw new Error('Por favor, preencha as informações do cliente primeiro.');
+      }
       
       const financialTerms = await saveFinancialTerms({
+        ...(formProgress.data.financialTermsId ? { id: formProgress.data.financialTermsId } : {}),
         customer_id: formProgress.data.customerId,
         total_amount: data.totalAmount
       });
+      
+      // Delete existing installments if updating
+      if (formProgress.data.financialTermsId) {
+        await supabase
+          .from('installments')
+          .delete()
+          .eq('financial_terms_id', formProgress.data.financialTermsId);
+      }
       
       await Promise.all(data.installments.map(installment => 
         saveInstallment({
@@ -107,7 +121,8 @@ export default function FinancialTermsForm() {
         completedSteps: [...prev.completedSteps, 'financial-terms'],
         data: {
           ...prev.data,
-          financialTerms: processedData
+          financialTerms: processedData,
+          financialTermsId: financialTerms.id
         }
       }));
     } catch (error) {

@@ -57,11 +57,12 @@ export default function InstallationLocationForm() {
 
       // Only proceed if we have a valid customer ID
       if (!formProgress.data.customerId) {
-        throw new Error('Customer ID is required. Please complete the customer information first.');
+        throw new Error('Por favor, preencha as informações do cliente primeiro.');
       }
 
-      // First save the location data to the database
-      await saveLocation({
+      // Save or update the location data
+      const savedLocation = await saveLocation({
+        id: formProgress.data.installationLocationId,
         customer_id: formProgress.data.customerId,
         street: data.street,
         number: data.number,
@@ -73,18 +74,18 @@ export default function InstallationLocationForm() {
         utility_company: data.utilityCompany,
         installation_type: data.installationType
       });
-
+      
       // Then update the form progress
       setFormProgress(prev => ({
         ...prev,
         currentStep: 'technical-config',
-        completedSteps: [...prev.completedSteps, 'installation-location'],
+        completedSteps: Array.from(new Set([...prev.completedSteps, 'installation-location'])),
         data: {
           ...prev.data,
-          installationLocation: data
+          installationLocation: data,
+          installationLocationId: savedLocation.id
         }
       }));
-
     } catch (error) {
       console.error('Error saving installation location:', error);
       // Show a more specific error message

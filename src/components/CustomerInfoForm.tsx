@@ -27,6 +27,8 @@ export default function CustomerInfoForm() {
   const [formProgress, setFormProgress] = useAtom(formProgressAtom);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [cpfError, setCpfError] = React.useState<string | null>(null);
+  const [authError, setAuthError] = React.useState<string | null>(null);
+  const [isLoading, setIsLoading] = React.useState(true);
   const { mutateAsync: saveCustomer } = useSupabaseMutation('customers');
 
   const {
@@ -46,6 +48,26 @@ export default function CustomerInfoForm() {
 
   const cpf = watch('cpf');
 
+  // Check authentication status on component mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        if (!session) {
+          setAuthError('Você precisa estar logado para continuar.');
+        }
+      } catch (error) {
+        console.error('Error checking auth status:', error);
+        setAuthError('Erro ao verificar autenticação.');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, []);
+
   // Update form when customer data changes
   useEffect(() => {
     if (formProgress.data.customerInfo) {
@@ -60,7 +82,7 @@ export default function CustomerInfoForm() {
     if (!cpf || cpf.includes('_')) return; // Don't check incomplete CPFs
     
     try {
-      const { data, error } = await supabase
+      const { data: existingCustomer, error } = await supabase
         .from('customers')
         .select('id, full_name')
         .eq('cpf', cpf)
@@ -68,13 +90,18 @@ export default function CustomerInfoForm() {
 
       if (error) throw error;
 
-      if (data) {
-        setCpfError(`CPF já cadastrado para o cliente: ${data.full_name}`);
-        return true;
-      } else {
-        setCpfError(null);
-        return false;
+      if (existingCustomer) {
+        // If this is an update for the same customer, don't show error
+        if (formProgress.data.customerId === existingCustomer.id) {
+          setCpfError(null);
+          return false;
+        } else {
+          setCpfError(`CPF já cadastrado para o cliente: ${existingCustomer.full_name}`);
+          return true;
+        }
       }
+      setCpfError(null);
+      return false;
     } catch (error) {
       console.error('Error checking CPF:', error);
       return false;
@@ -84,10 +111,18 @@ export default function CustomerInfoForm() {
   const onSubmit = async (data: CustomerInfo) => {
     try {
       setIsSubmitting(true);
+      setAuthError(null);
+      
+      // Check authentication status before proceeding
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        setAuthError('Você precisa estar logado para salvar os dados.');
+        return;
+      }
       
       // Check CPF one last time before submitting
-      const cpfExists = await checkCpfExists(data.cpf);
-      if (cpfExists) {
+      const isInvalidCpf = await checkCpfExists(data.cpf);
+      if (isInvalidCpf) {
         setIsSubmitting(false);
         return;
       }
@@ -104,25 +139,52 @@ export default function CustomerInfoForm() {
         marital_status: data.maritalStatus
       });
       
+      // Store the customer ID for linking other records
       setFormProgress(prev => ({
         ...prev,
         currentStep: 'installation-location',
         completedSteps: [...prev.completedSteps, 'customer-info'],
         data: {
-          ...prev.data,
+          customerId: savedCustomer.id,
           customerInfo: data,
-          customerId: savedCustomer.id
+          installationLocation: undefined,
+          technicalConfig: undefined,
+          financialTerms: undefined,
+          installationLocationId: undefined,
+          technicalConfigId: undefined,
+          financialTermsId: undefined
         }
       }));
     } catch (error) {
       console.error('Error saving customer info:', error);
       if (error.message?.includes('customers_cpf_key')) {
         setCpfError('Este CPF já está cadastrado no sistema.');
+      } else if (error.message?.includes('Auth session missing')) {
+        setAuthError('Sessão expirada. Por favor, faça login novamente.');
       }
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  if (authError) {
+    return (
+      <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
+        <div className="flex items-center justify-center text-red-600 p-4">
+          <AlertCircle className="w-6 h-6 mr-2" />
+          <p>{authError}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
@@ -298,7 +360,7 @@ export default function CustomerInfoForm() {
 
           <button
             type="submit"
-            disabled={isSubmitting || !!cpfError}
+            disabled={isSubmitting}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
           >
             {isSubmitting ? (

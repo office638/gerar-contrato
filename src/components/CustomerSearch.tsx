@@ -5,6 +5,10 @@ import { supabase } from '../lib/supabase';
 import { useAtom } from 'jotai';
 import { formProgressAtom } from '../store/form';
 
+interface CustomerSearchProps {
+  documentType: 'contract' | 'power-of-attorney';
+}
+
 async function deleteCustomer(customerId: string) {
   try {
     const { error: custError } = await supabase
@@ -20,7 +24,7 @@ async function deleteCustomer(customerId: string) {
   }
 }
 
-export default function CustomerSearch() {
+export default function CustomerSearch({ documentType }: CustomerSearchProps) {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [, setFormProgress] = useAtom(formProgressAtom);
   const [isDeleting, setIsDeleting] = React.useState(false);
@@ -31,12 +35,22 @@ export default function CustomerSearch() {
     async () => {
       if (!searchTerm) return [];
       
-      const { data, error } = await supabase
-        .from('customers')
-        .select('*')
-        .or(`full_name.ilike.%${searchTerm}%,cpf.ilike.%${searchTerm}%`)
-        .limit(5);
-
+      let query;
+      if (documentType === 'contract') {
+        query = supabase
+          .from('customers')
+          .select('*')
+          .or(`full_name.ilike.%${searchTerm}%,cpf.ilike.%${searchTerm}%`)
+          .limit(5);
+      } else {
+        query = supabase
+          .from('power_of_attorney')
+          .select('*')
+          .or(`full_name.ilike.%${searchTerm}%,cpf.ilike.%${searchTerm}%`)
+          .limit(5);
+      }
+      
+      const { data, error } = await query;
       if (error) throw error;
       return data;
     },
@@ -174,7 +188,7 @@ export default function CustomerSearch() {
             setSearchTerm(e.target.value);
             setShowDropdown(true);
           }}
-          placeholder="Buscar cliente..."
+          placeholder={`Buscar ${documentType === 'contract' ? 'cliente' : 'procuração'}...`}
           className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
         <Search className="absolute left-3 top-2.5 h-5 w-5 text-gray-400" />
