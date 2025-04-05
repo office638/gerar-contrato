@@ -282,7 +282,7 @@ export default function ReviewForm() {
             Voltar
           </button>
 
-          <div className="flex gap-4 ml-auto">
+          <div className="flex flex-col md:flex-row gap-4 ml-auto">
             <button
               onClick={handleSincetClick}
               disabled={isAutomating}
@@ -296,7 +296,7 @@ export default function ReviewForm() {
               ) : (
                 <>
                   <ExternalLink className="w-4 h-4 mr-2" />
-                  {estadoLogin ? "Confirmar Login e Iniciar Fluxo" : "Acessar Sincet e Preencher Dados"}
+                  {estadoLogin ? "Confirmar Login e Iniciar Fluxo" : "Sincet"}
                 </>
               )}
             </button>
