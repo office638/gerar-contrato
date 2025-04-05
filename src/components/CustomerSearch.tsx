@@ -7,20 +7,16 @@ import { formProgressAtom } from '../store/form';
 
 async function deleteCustomer(customerId: string) {
   try {
-    // Delete related records first
-    await supabase.from('installments').delete().eq('financial_terms_id', (
-      await supabase.from('financial_terms').select('id').eq('customer_id', customerId)
-    ).data?.[0]?.id || '');
+    const { error: custError } = await supabase
+      .from('customers')
+      .delete()
+      .eq('id', customerId);
     
-    await supabase.from('financial_terms').delete().eq('customer_id', customerId);
-    await supabase.from('technical_configs').delete().eq('customer_id', customerId);
-    await supabase.from('installation_locations').delete().eq('customer_id', customerId);
-    await supabase.from('customers').delete().eq('id', customerId);
-    
+    if (custError) throw custError;
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error deleting customer:', error);
-    return false;
+    throw new Error(error.message || 'Failed to delete customer');
   }
 }
 
@@ -52,24 +48,28 @@ export default function CustomerSearch() {
 
   const handleSelectCustomer = async (customer: any) => {
     try {
-      // Fetch all related data
+      // Fetch all related data using maybeSingle() instead of single()
       const [locationRes, technicalRes, financialRes] = await Promise.all([
-        supabase.from('installation_locations').select('*').eq('customer_id', customer.id).single(),
-        supabase.from('technical_configs').select('*').eq('customer_id', customer.id).single(),
-        supabase.from('financial_terms').select('*').eq('customer_id', customer.id).single()
+        supabase.from('installation_locations').select('*').eq('customer_id', customer.id).maybeSingle(),
+        supabase.from('technical_configs').select('*').eq('customer_id', customer.id).maybeSingle(),
+        supabase.from('financial_terms').select('*').eq('customer_id', customer.id).maybeSingle()
       ]);
 
       let installments = [];
+      // Only fetch installments if we have a valid financial terms ID
       if (financialRes.data?.id) {
-        const { data: installmentsData } = await supabase
+        const { data: installmentsData, error: installmentsError } = await supabase
           .from('installments')
           .select('*')
           .eq('financial_terms_id', financialRes.data.id);
-        installments = installmentsData?.map(inst => ({
-          method: inst.method,
-          amount: inst.amount,
-          dueDate: new Date(inst.due_date)
-        })) || [];
+          
+        if (!installmentsError && installmentsData) {
+          installments = installmentsData.map(inst => ({
+            method: inst.method,
+            amount: inst.amount,
+            dueDate: new Date(inst.due_date)
+          }));
+        }
       }
 
       setFormProgress(prev => ({
@@ -89,6 +89,7 @@ export default function CustomerSearch() {
             email: customer.email,
             maritalStatus: customer.marital_status
           },
+          // Only set location data if it exists
           installationLocation: locationRes.data ? {
             street: locationRes.data.street,
             number: locationRes.data.number,
@@ -100,6 +101,7 @@ export default function CustomerSearch() {
             utilityCompany: locationRes.data.utility_company,
             installationType: locationRes.data.installation_type
           } : undefined,
+          // Only set technical config if it exists
           technicalConfig: technicalRes.data ? {
             inverter1: {
               brand: technicalRes.data.inverter1_brand,
@@ -121,6 +123,7 @@ export default function CustomerSearch() {
             installationType: technicalRes.data.installation_type,
             installationDays: technicalRes.data.installation_days
           } : undefined,
+          // Only set financial terms if they exist
           financialTerms: financialRes.data ? {
             totalAmount: financialRes.data.total_amount,
             installments
@@ -150,13 +153,14 @@ export default function CustomerSearch() {
     e.stopPropagation();
     if (window.confirm(`Tem certeza que deseja excluir o cadastro de ${customer.full_name}? Esta ação não pode ser desfeita.`)) {
       setIsDeleting(true);
-      const success = await deleteCustomer(customer.id);
-      if (success) {
+      try {
+        await deleteCustomer(customer.id);
         setSearchTerm(''); // Reset search to refresh list
-      } else {
-        alert('Erro ao excluir cliente. Por favor, tente novamente.');
+      } catch (error: any) {
+        alert(`Erro ao excluir cliente: ${error.message}`);
+      } finally {
+        setIsDeleting(false);
       }
-      setIsDeleting(false);
     }
   };
 

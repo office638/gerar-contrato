@@ -2,13 +2,30 @@ import React from 'react';
 import { useAtom } from 'jotai';
 import { formProgressAtom, formSteps } from '../store/form';
 import * as Icons from 'lucide-react';
-import { FormStep } from '../types/form';
+import { FormStep, FormProgress } from '../types/form';
 
 export default function ProgressBar() {
   const [formProgress, setFormProgress] = useAtom(formProgressAtom);
   
+  const canNavigateToStep = (stepId: FormStep) => {
+    const stepIndex = formSteps.findIndex(step => step.id === stepId);
+    const currentIndex = formSteps.findIndex(step => step.id === formProgress.currentStep);
+    
+    // Can always navigate to current step or previous completed steps
+    if (stepId === formProgress.currentStep || formProgress.completedSteps.includes(stepId)) {
+      return true;
+    }
+    
+    // Can navigate to next step only if current step is completed
+    if (stepIndex === currentIndex + 1 && formProgress.completedSteps.includes(formSteps[currentIndex].id)) {
+      return true;
+    }
+    
+    return false;
+  };
+
   const handleStepClick = (stepId: FormStep) => {
-    if (formProgress.completedSteps.includes(stepId) || stepId === formProgress.currentStep) {
+    if (canNavigateToStep(stepId)) {
       setFormProgress(prev => ({
         ...prev,
         currentStep: stepId
@@ -22,17 +39,16 @@ export default function ProgressBar() {
         {formSteps.map((step, index) => {
           const isCompleted = formProgress.completedSteps.includes(step.id);
           const isCurrent = formProgress.currentStep === step.id;
+          const isClickable = canNavigateToStep(step.id);
           const Icon = Icons[step.icon];
           
           return (
             <button
               key={step.id}
               onClick={() => handleStepClick(step.id)}
-              className={`flex flex-col items-center flex-1 group ${
-                formProgress.completedSteps.includes(step.id) || step.id === formProgress.currentStep
-                  ? 'cursor-pointer'
-                  : 'cursor-not-allowed opacity-50'
-              }`}
+              className={`flex flex-col items-center flex-1 group transition-all duration-200 ${
+                isClickable ? 'cursor-pointer hover:opacity-80' : 'cursor-not-allowed opacity-50'
+              } ${isCurrent ? 'scale-105' : ''}`}
             >
               <div
                 className={`w-10 h-10 rounded-full flex items-center justify-center mb-2 transition-colors
@@ -42,7 +58,7 @@ export default function ProgressBar() {
                       ? 'bg-blue-500 text-white'
                       : 'bg-gray-200 text-gray-500'
                   }
-                  ${(isCompleted || step.id === formProgress.currentStep) && 'group-hover:ring-2 group-hover:ring-offset-2 group-hover:ring-blue-500'}
+                  ${isClickable && 'group-hover:ring-2 group-hover:ring-offset-2 group-hover:ring-blue-500'}
                 `}
               >
                 {isCompleted ? (

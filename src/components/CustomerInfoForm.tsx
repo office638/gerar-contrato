@@ -64,7 +64,9 @@ export default function CustomerInfoForm() {
         .from('customers')
         .select('id, full_name')
         .eq('cpf', cpf)
-        .single();
+        .maybeSingle();
+
+      if (error) throw error;
 
       if (data) {
         setCpfError(`CPF já cadastrado para o cliente: ${data.full_name}`);

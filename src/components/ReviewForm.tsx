@@ -1,7 +1,8 @@
 import React from 'react';
 import { useAtom } from 'jotai';
 import { formProgressAtom } from '../store/form';
-import { FileText, User, MapPin, Zap, DollarSign, Loader2, FileSignature, ArrowLeft } from 'lucide-react';
+import { paymentMethods } from '../types/form';
+import { FileText, User, MapPin, Zap, DollarSign, Loader2, FileSignature, ArrowLeft, ExternalLink } from 'lucide-react';
 import { generateContract } from '../utils/generateContract';
 import { generatePowerOfAttorney } from '../utils/generatePowerOfAttorney';
 
@@ -9,6 +10,19 @@ export default function ReviewForm() {
   const [formProgress, setFormProgress] = useAtom(formProgressAtom);
   const [isGeneratingContract, setIsGeneratingContract] = React.useState(false);
   const [isGeneratingPowerOfAttorney, setIsGeneratingPowerOfAttorney] = React.useState(false);
+  const [estadoLogin, setEstadoLogin] = React.useState(false);
+  const [isAutomating, setIsAutomating] = React.useState(false);
+
+  const handleSincetClick = () => {
+    if (!estadoLogin) {
+      alert("Faça login no sistema que será aberto em uma nova aba. Depois volte nesta aba e clique novamente no botão para iniciar o preenchimento automático.");
+      window.open("https://servicos.sinceti.net.br/", "_blank");
+      setEstadoLogin(true);
+    } else {
+      alert("Pressione as teclas Alt + L para ativar o fluxo e preencher automaticamente os dados no Sincet.");
+      setEstadoLogin(false);
+    }
+  };
 
   const handleGenerateContract = async () => {
     try {
@@ -71,8 +85,28 @@ export default function ReviewForm() {
               <p className="text-gray-900">{formProgress.data.customerInfo?.fullName}</p>
             </div>
             <div>
+              <p className="text-sm font-medium text-gray-500">Estado Civil</p>
+              <p className="text-gray-900">{formProgress.data.customerInfo?.maritalStatus}</p>
+            </div>
+            <div>
               <p className="text-sm font-medium text-gray-500">CPF</p>
               <p className="text-gray-900">{formProgress.data.customerInfo?.cpf}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500">RG</p>
+              <p className="text-gray-900">{formProgress.data.customerInfo?.rg}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500">Órgão Emissor</p>
+              <p className="text-gray-900">{formProgress.data.customerInfo?.issuingAuthority}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500">Profissão</p>
+              <p className="text-gray-900">{formProgress.data.customerInfo?.profession}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500">Nacionalidade</p>
+              <p className="text-gray-900">{formProgress.data.customerInfo?.nationality}</p>
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500">Email</p>
@@ -112,6 +146,18 @@ export default function ReviewForm() {
               <p className="text-sm font-medium text-gray-500">Código UC</p>
               <p className="text-gray-900">{formProgress.data.installationLocation?.utilityCode}</p>
             </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500">Bairro</p>
+              <p className="text-gray-900">{formProgress.data.installationLocation?.neighborhood}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500">Concessionária</p>
+              <p className="text-gray-900">{formProgress.data.installationLocation?.utilityCompany}</p>
+            </div>
+            <div>
+              <p className="text-sm font-medium text-gray-500">Tipo de Instalação</p>
+              <p className="text-gray-900">{formProgress.data.installationLocation?.installationType}</p>
+            </div>
           </div>
         </div>
 
@@ -133,8 +179,39 @@ export default function ReviewForm() {
                   <p className="text-sm font-medium text-gray-500">Potência</p>
                   <p className="text-gray-900">{formProgress.data.technicalConfig?.inverter1.power} kW</p>
                 </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Quantidade</p>
+                  <p className="text-gray-900">{formProgress.data.technicalConfig?.inverter1.quantity}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Garantia (anos)</p>
+                  <p className="text-gray-900">{formProgress.data.technicalConfig?.inverter1.warrantyPeriod}</p>
+                </div>
               </div>
             </div>
+            {formProgress.data.technicalConfig?.inverter2 && (
+              <div>
+                <h4 className="font-medium text-gray-700 mt-4">Inversor Secundário</h4>
+                <div className="grid grid-cols-2 gap-4 mt-2">
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Fabricante</p>
+                    <p className="text-gray-900">{formProgress.data.technicalConfig.inverter2.brand}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Potência</p>
+                    <p className="text-gray-900">{formProgress.data.technicalConfig.inverter2.power} kW</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Quantidade</p>
+                    <p className="text-gray-900">{formProgress.data.technicalConfig.inverter2.quantity}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-500">Garantia (anos)</p>
+                    <p className="text-gray-900">{formProgress.data.technicalConfig.inverter2.warrantyPeriod}</p>
+                  </div>
+                </div>
+              </div>
+            )}
             <div>
               <h4 className="font-medium text-gray-700">Módulos Solares</h4>
               <div className="grid grid-cols-2 gap-4 mt-2">
@@ -145,6 +222,14 @@ export default function ReviewForm() {
                 <div>
                   <p className="text-sm font-medium text-gray-500">Quantidade</p>
                   <p className="text-gray-900">{formProgress.data.technicalConfig?.solarModules.quantity} unidades</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Potência</p>
+                  <p className="text-gray-900">{formProgress.data.technicalConfig?.solarModules.power} W</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-gray-500">Dias para Instalação</p>
+                  <p className="text-gray-900">{formProgress.data.technicalConfig?.installationDays} dias</p>
                 </div>
               </div>
             </div>
@@ -169,8 +254,11 @@ export default function ReviewForm() {
               <div className="mt-2 space-y-2">
                 {formProgress.data.financialTerms?.installments.map((installment, index) => (
                   <div key={index} className="flex justify-between text-sm">
-                    <span>{installment.method}</span>
-                    <span>R$ {installment.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                    <span>Parcela {index + 1} - {paymentMethods.find(m => m.value === installment.method)?.label}</span>
+                    <div>
+                      <span className="mr-4">R$ {installment.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                      <span className="text-gray-500">Venc: {installment.dueDate.toLocaleDateString('pt-BR')}</span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -195,6 +283,24 @@ export default function ReviewForm() {
           </button>
 
           <div className="flex gap-4 ml-auto">
+            <button
+              onClick={handleSincetClick}
+              disabled={isAutomating}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center"
+            >
+              {isAutomating ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Iniciando Fluxo...
+                </>
+              ) : (
+                <>
+                  <ExternalLink className="w-4 h-4 mr-2" />
+                  {estadoLogin ? "Confirmar Login e Iniciar Fluxo" : "Acessar Sincet e Preencher Dados"}
+                </>
+              )}
+            </button>
+
             <button
               onClick={handleGeneratePowerOfAttorney}
               disabled={isGeneratingPowerOfAttorney}

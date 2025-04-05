@@ -64,7 +64,11 @@ export type TechnicalConfig = {
   installationDays: number;
 };
 
-export type PaymentMethod = 'Transfer' | 'BankSlip' | 'Pix' | 'Financing';
+export type PaymentMethod = 
+  | 'Transferência'
+  | 'Boleto'
+  | 'Pix'
+  | 'Financiamento';
 
 export type PaymentInstallment = {
   method: PaymentMethod;
@@ -122,10 +126,10 @@ export const installationLocationSchema = z.object({
 });
 
 export const paymentMethods: { value: PaymentMethod; label: string }[] = [
-  { value: 'Transfer', label: 'Transferência' },
-  { value: 'BankSlip', label: 'Boleto' },
+  { value: 'Transferência', label: 'Transferência' },
+  { value: 'Boleto', label: 'Boleto' },
   { value: 'Pix', label: 'Pix' },
-  { value: 'Financing', label: 'Financiamento' },
+  { value: 'Financiamento', label: 'Financiamento' },
 ];
 
 export const installationTypes = [

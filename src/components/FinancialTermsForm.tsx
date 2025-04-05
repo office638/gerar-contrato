@@ -12,7 +12,7 @@ import "react-datepicker/dist/react-datepicker.css";
 
 const schema = z.object({
   installments: z.array(z.object({
-    method: z.enum(['Transfer', 'BankSlip', 'Pix', 'Financing'] as const),
+    method: z.enum(['Transferência', 'Boleto', 'Pix', 'Financiamento'] as const),
     amount: z.number().min(0),
     dueDate: z.date()
   })).min(1, 'Adicione pelo menos uma parcela'),
@@ -37,7 +37,7 @@ export default function FinancialTermsForm() {
   } = useForm<FinancialTermsFormData>({
     resolver: zodResolver(schema),
     defaultValues: formProgress.data.financialTerms || {
-      installments: [{ method: 'Transfer', amount: 0, dueDate: new Date() }],
+      installments: [{ method: 'Transferência', amount: 0, dueDate: new Date() }],
       totalAmount: 0
     }
   });
@@ -51,14 +51,21 @@ export default function FinancialTermsForm() {
   }, [formProgress.data.financialTerms, reset]);
 
   useEffect(() => {
-    const total = installments.reduce((sum, inst) => sum + (inst.amount || 0), 0);
-    setValue('totalAmount', total);
+    // Calculate total whenever installments change
+    const calculateTotal = () => {
+      const total = installments?.reduce((sum, inst) => {
+        const amount = Number(inst.amount) || 0;
+        return sum + amount;
+      }, 0) || 0;
+      setValue('totalAmount', total, { shouldValidate: true });
+    };
+    calculateTotal();
   }, [installments, setValue]);
 
   const addInstallment = () => {
     setValue('installments', [
       ...installments,
-      { method: 'Transfer', amount: 0, dueDate: new Date() }
+      { method: 'Transferência', amount: 0, dueDate: new Date() }
     ]);
   };
 
@@ -153,8 +160,12 @@ export default function FinancialTermsForm() {
                         {...register(`installments.${index}.amount`, {
                           valueAsNumber: true,
                           onChange: (e) => {
-                            const value = parseFloat(e.target.value);
-                            setValue(`installments.${index}.amount`, isNaN(value) ? 0 : value);
+                            const value = parseFloat(e.target.value) || 0;
+                            setValue(`installments.${index}.amount`, value, { shouldValidate: true });
+                            // Immediately recalculate total
+                            const total = installments.reduce((sum, inst, i) => 
+                              sum + (i === index ? value : (Number(inst.amount) || 0)), 0);
+                            setValue('totalAmount', total, { shouldValidate: true });
                           }
                         })}
                         className="w-full pl-8 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -201,16 +212,15 @@ export default function FinancialTermsForm() {
         <div className="bg-gray-50 p-4 rounded-lg">
           <h3 className="text-lg font-semibold text-gray-700 mb-4 flex items-center">
             <DollarSign className="w-5 h-5 mr-2" />
-            Valor Total
+            Valor Total (Soma das Parcelas)
           </h3>
           <div className="relative">
             <span className="absolute left-3 top-2 text-gray-500">R$</span>
             <input
-              type="number"
-              step="0.01"
-              {...register('totalAmount', { valueAsNumber: true })}
-              className="w-full pl-8 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-100"
+              type="text"
               readOnly
+              value={watch('totalAmount')?.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || '0,00'}
+              className="w-full pl-8 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-100"
             />
           </div>
           {errors.totalAmount && (
@@ -238,7 +248,7 @@ export default function FinancialTermsForm() {
   onClick={() => {
     reset({
       installments: [{ 
-        method: 'Transfer', 
+        method: 'Transferência', 
         amount: 0, 
         dueDate: new Date() 
       }],
@@ -251,13 +261,10 @@ export default function FinancialTermsForm() {
   Limpar Campos
 </button>
 
-
-
-
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center"
           >
             {isSubmitting ? (
               <>

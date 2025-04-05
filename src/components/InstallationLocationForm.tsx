@@ -40,20 +40,27 @@ export default function InstallationLocationForm() {
   const { mutateAsync: saveLocation } = useSupabaseMutation('installation_locations');
 
   const {
-  register,
-  handleSubmit,
-  reset, // Adicione esta linha
-  formState: { errors }
-} = useForm<InstallationLocation>({
-  resolver: zodResolver(schema),
-  defaultValues: formProgress.data.installationLocation
-});
-
+    register,
+    handleSubmit,
+    reset,
+    formState: { isValid },
+    formState: { errors }
+  } = useForm<InstallationLocation>({
+    resolver: zodResolver(schema),
+    defaultValues: formProgress.data.installationLocation,
+    mode: 'onChange'
+  });
 
   const onSubmit = async (data: InstallationLocation) => {
     try {
       setIsSubmitting(true);
-      
+
+      // Only proceed if we have a valid customer ID
+      if (!formProgress.data.customerId) {
+        throw new Error('Customer ID is required. Please complete the customer information first.');
+      }
+
+      // First save the location data to the database
       await saveLocation({
         customer_id: formProgress.data.customerId,
         street: data.street,
@@ -66,7 +73,8 @@ export default function InstallationLocationForm() {
         utility_company: data.utilityCompany,
         installation_type: data.installationType
       });
-      
+
+      // Then update the form progress
       setFormProgress(prev => ({
         ...prev,
         currentStep: 'technical-config',
@@ -76,8 +84,15 @@ export default function InstallationLocationForm() {
           installationLocation: data
         }
       }));
+
     } catch (error) {
       console.error('Error saving installation location:', error);
+      // Show a more specific error message
+      if (error instanceof Error) {
+        alert(error.message);
+      } else {
+        alert('Erro ao salvar dados do local. Certifique-se de preencher os dados do cliente primeiro.');
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -206,61 +221,58 @@ export default function InstallationLocationForm() {
           </div>
         </div>
 
-        {/* ✅ Botões de Navegação + Limpar */}
-<div className="flex justify-between pt-4 gap-2 flex-wrap sm:flex-nowrap">
-  <button
-    type="button"
-    onClick={() =>
-      setFormProgress(prev => ({
-        ...prev,
-        currentStep: 'customer-info'
-      }))
-    }
-    className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 flex items-center"
-  >
-    <ArrowLeft className="w-4 h-4 mr-2" />
-    Voltar
-  </button>
+        <div className="flex justify-between pt-4 gap-2 flex-wrap sm:flex-nowrap">
+          <button
+            type="button"
+            onClick={() =>
+              setFormProgress(prev => ({
+                ...prev,
+                currentStep: 'customer-info'
+              }))
+            }
+            className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 flex items-center"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Voltar
+          </button>
 
-  <button
-  type="button"
-  onClick={() => reset({
-    state: '',
-    installationType: 'Residential',
-    utilityCode: '',
-    utilityCompany: '',
-    street: '',
-    number: '',
-    neighborhood: '',
-    city: '',
-    zipCode: ''
-  })}
-  className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 flex items-center"
->
-  <Trash2 className="w-4 h-4 mr-2" />
-  Limpar Campos
-</button>
+          <button
+            type="button"
+            onClick={() => reset({
+              state: '',
+              installationType: 'Residential',
+              utilityCode: '',
+              utilityCompany: '',
+              street: '',
+              number: '',
+              neighborhood: '',
+              city: '',
+              zipCode: ''
+            })}
+            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 flex items-center"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Limpar Campos
+          </button>
 
-
-  <button
-    type="submit"
-    disabled={isSubmitting}
-    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-  >
-    {isSubmitting ? (
-      <>
-        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-        Processando...
-      </>
-    ) : (
-      <>
-        Próximo
-        <ArrowRight className="w-4 h-4 ml-2" />
-      </>
-    )}
-  </button>
-</div>
-
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center transition-colors duration-200"
+          >
+            {isSubmitting ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Processando...
+              </>
+            ) : (
+              <>
+                Próximo
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </>
+            )}
+          </button>
+        </div>
       </form>
     </div>
   );
