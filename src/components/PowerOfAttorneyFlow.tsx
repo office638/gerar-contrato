@@ -39,15 +39,33 @@ export default function PowerOfAttorneyFlow() {
     resolver: zodResolver(schema)
   });
 
+  // Reset form when powerOfAttorney data is null
+  useEffect(() => {
+    if (formProgress.data.powerOfAttorney === null) {
+      reset({
+        fullName: '',
+        cpf: '',
+        rg: '',
+        issuingAuthority: '',
+        street: '',
+        number: '',
+        neighborhood: '',
+        city: '',
+        state: '' as any
+      });
+    }
+  }, [formProgress.data.powerOfAttorney, reset]);
+
   // Load data from formProgress if available
   useEffect(() => {
-    if (formProgress.data.powerOfAttorney) {
+    if (formProgress.data.powerOfAttorney && formProgress.data.powerOfAttorney !== null) {
       const data = formProgress.data.powerOfAttorney;
       Object.entries(data).forEach(([key, value]) => {
         setValue(key as keyof PowerOfAttorneyData, value);
       });
     }
   }, [formProgress.data.powerOfAttorney, setValue]);
+
   const onSubmit = async (data: PowerOfAttorneyData) => {
     try {
       setIsSubmitting(true);

@@ -55,8 +55,14 @@ function App() {
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center">
-              <Sun className="h-8 w-8 text-yellow-500 mr-3" />
-              <h1 className="text-2xl font-bold text-gray-900">
+              <Sun 
+                onClick={() => setSelectedFlow(null)}
+                className="h-8 w-8 text-yellow-500 mr-3 cursor-pointer hover:text-yellow-600 transition-colors"
+              />
+              <h1 
+                onClick={() => setSelectedFlow(null)} 
+                className="text-2xl font-bold text-gray-900 cursor-pointer hover:text-gray-700 transition-colors"
+              >
                 Gerador de Contratos de Energia Solar
               </h1>
             </div>
@@ -84,26 +90,24 @@ function App() {
               </p>
             </div>
             
-            <div className="flex gap-6">
+            <div className="flex flex-col md:flex-row gap-4 md:gap-6">
               <button
                 onClick={() => setSelectedFlow('contract')}
-                className="flex items-center px-6 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
+                className="flex items-center px-4 py-3 sm:px-6 sm:py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
               >
                 <FileText className="w-6 h-6 mr-3" />
                 <div className="text-left">
-                  <div className="font-semibold">Contrato + Procuração</div>
-                  <div className="text-sm opacity-90">Gerar documentação completa</div>
+                  <div className="font-semibold">Gerar Contrato + Procuração</div>
                 </div>
               </button>
 
               <button
                 onClick={() => setSelectedFlow('power-of-attorney')}
-                className="flex items-center px-6 py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
+                className="flex items-center px-4 py-3 sm:px-6 sm:py-4 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
               >
                 <FileSignature className="w-6 h-6 mr-3" />
                 <div className="text-left">
-                  <div className="font-semibold">Apenas Procuração</div>
-                  <div className="text-sm opacity-90">Gerar somente procuração</div>
+                  <div className="font-semibold">Gerar Procuração</div>
                 </div>
               </button>
             </div>
@@ -118,8 +122,26 @@ function App() {
                 ← Voltar
               </button>
               <div className="flex items-center gap-4">
-                <CustomerSearch documentType={selectedFlow} />
+                {showHistory && <CustomerSearch documentType={selectedFlow} />}
                 <ExcelImportExport />
+                {selectedFlow === 'power-of-attorney' && (
+                  <button
+                    onClick={() => {
+                      setFormProgress({
+                        currentStep: null,
+                        completedSteps: [],
+                        data: {
+                          powerOfAttorney: null
+                        }
+                      });
+                      setShowHistory(false);
+                    }}
+                    className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 flex items-center"
+                  >
+                    <PlusCircle className="w-4 h-4 mr-2" />
+                    Nova Procuração
+                  </button>
+                )}
                 {selectedFlow === 'contract' && (
                   <button
                     onClick={() => {

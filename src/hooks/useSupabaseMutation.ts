@@ -12,9 +12,9 @@ async function findExistingCustomer(cpf: string) {
     .from('customers')
     .select('id')
     .eq('cpf', cpf)
-    .single();
+    .maybeSingle();
 
-  if (error && error.code !== 'PGRST116') throw error;
+  if (error) throw error;
   return data?.id;
 }
 
