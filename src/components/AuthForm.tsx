@@ -24,18 +24,12 @@ export default function AuthForm({ isSignUp: defaultIsSignUp = false }: AuthForm
 
     try {
       if (isSignUp) {
-        // Save to waitlist table
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('waitlist')
-          .insert([
-            { 
-              email,
-              status: 'pending'
-            }
-          ])
+          .insert([{ email }])
           .select()
           .single();
-
+        
         if (error) throw error;
         
         // Show waitlist message
@@ -47,7 +41,16 @@ export default function AuthForm({ isSignUp: defaultIsSignUp = false }: AuthForm
           email,
           password
         });
-        if (error) throw error;
+
+        if (error) {
+          if (error.message === 'Invalid login credentials') {
+            throw new Error('Email ou senha incorretos. Por favor, verifique suas credenciais e tente novamente.');
+          }
+          throw error;
+        }
+
+        // Redirect to app on successful login
+        navigate('/app');
       }
     } catch (error: any) {
       setError(error.message);
@@ -89,12 +92,19 @@ export default function AuthForm({ isSignUp: defaultIsSignUp = false }: AuthForm
             </Link>
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            {isSignUp ? 'Criar nova conta' : 'Acesse sua conta'}
+            {isSignUp ? 'Cadastre-se na lista de espera' : 'Acesse sua conta'}
           </h2>
+          {isSignUp && <p className="mt-2 text-center text-sm text-gray-600">
+            Entraremos em contato assim que sua conta estiver pronta
+          </p>}
         </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center text-red-700">
+          <div className={`border rounded-lg p-4 flex items-center ${
+            error.includes('instruções') 
+              ? 'bg-green-50 border-green-200 text-green-700'
+              : 'bg-red-50 border-red-200 text-red-700'
+          }`}>
             <AlertCircle className="w-5 h-5 mr-2" />
             {error}
           </div>
@@ -123,27 +133,29 @@ export default function AuthForm({ isSignUp: defaultIsSignUp = false }: AuthForm
                 />
               </div>
             </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Senha
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-gray-400" />
+            {!isSignUp && (
+              <div>
+                <label htmlFor="password" className="sr-only">
+                  Senha
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5 text-gray-400" />
+                  </div>
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autoComplete="current-password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="appearance-none rounded-none relative block w-full px-3 py-2 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                    placeholder="Senha"
+                  />
                 </div>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete={isSignUp ? 'new-password' : 'current-password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none rounded-none relative block w-full px-3 py-2 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                  placeholder="Senha"
-                />
               </div>
-            </div>
+            )}
           </div>
 
           <div>
@@ -155,14 +167,16 @@ export default function AuthForm({ isSignUp: defaultIsSignUp = false }: AuthForm
               {loading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {isSignUp ? 'Criando conta...' : 'Entrando...'}
+                  Cadastrando...
                 </>
+              ) : isSignUp ? (
+                'Cadastrar na lista de espera'
               ) : (
-                isSignUp ? 'Criar conta' : 'Entrar'
+                'Entrar'
               )}
             </button>
           </div>
-
+          
           <div className="text-center">
             <button
               type="button"

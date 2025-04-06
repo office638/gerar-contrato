@@ -61,16 +61,20 @@ function App() {
                   <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center">
-                        <Sun 
+                        <img
+                          src="https://imgur.com/DT6IwWn.jpg"
+                          alt="Logo"
                           onClick={() => setSelectedFlow(null)}
-                          className="h-8 w-8 text-yellow-500 mr-3 cursor-pointer hover:text-yellow-600 transition-colors"
+                          className="h-8 cursor-pointer hover:opacity-80 transition-opacity mr-3" 
                         />
-                        <h1 
-                          onClick={() => setSelectedFlow(null)} 
-                          className="text-2xl font-bold text-gray-900 cursor-pointer hover:text-gray-700 transition-colors"
-                        >
-                          Gerador de Contratos de Energia Solar
+                        <div className="flex flex-col">
+                          <h1 className="text-xl font-bold text-gray-900">
+                            Meu Contrato Solar
                         </h1>
+                          <span className="text-sm text-gray-600">
+                            Gerador de Contratos de Energia Solar
+                          </span>
+                        </div>
                       </div>
                       <div className="flex items-center gap-4">
                         <button
@@ -129,7 +133,6 @@ function App() {
                         </button>
                         <div className="flex items-center gap-4">
                           {showHistory && <CustomerSearch documentType={selectedFlow} />}
-                          <ExcelImportExport />
                           {selectedFlow === 'power-of-attorney' && (
                             <button
                               onClick={() => {
