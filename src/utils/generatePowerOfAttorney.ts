@@ -20,7 +20,7 @@ export async function generatePowerOfAttorney(formData: FormProgress['data']): P
     const footerY = pageHeight - 30;
     
     // Adiciona a logo no rodapé (canto direito)
-    doc.addImage('https://imgur.com/DT6IwWn.jpg', 'PNG', pageWidth - 50, footerY, 30, 30 * 0.3);
+    doc.addImage('https://i.imgur.com/J9lB0MV.jpg', 'PNG', pageWidth - 50, footerY, 30, 30 * 0.3);
     
     // Adiciona o número da página (canto esquerdo)
     doc.setFontSize(8);
@@ -28,7 +28,7 @@ export async function generatePowerOfAttorney(formData: FormProgress['data']): P
   };
 
   const addLogo = (doc: any, y: number, width: number) => {
-    const logoUrl = 'https://imgur.com/DT6IwWn.jpg';
+    const logoUrl = 'https://i.imgur.com/J9lB0MV.jpg';
     const pageWidth = doc.internal.pageSize.width;
     try {
       // Adiciona a logo no canto direito
