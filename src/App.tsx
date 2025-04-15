@@ -69,8 +69,9 @@ function App() {
                         />
                         <div className="flex flex-col">
                           <h1 className="text-xl font-bold text-gray-900">
-                            Meu Contrato Solar
-                        </h1>
+                            <span className="block md:hidden text-sm">Meu Contrato Solar</span>
+                            <span className="hidden md:block">Meu Contrato Solar</span>
+                          </h1>
                           <span className="text-sm text-gray-600">
                             Gerador de Contratos de Energia Solar
                           </span>

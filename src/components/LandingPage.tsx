@@ -16,9 +16,12 @@ export default function LandingPage() {
                   alt="Logo"
                   className="h-8 hover:opacity-80 transition-opacity mr-3"
                 />
-                <h1 className="text-xl font-bold text-gray-900">
-                  Meu Contrato Solar
-                </h1>
+                <div className="flex flex-col">
+                  <h1 className="text-xl font-bold text-gray-900">
+                    <span className="block md:hidden text-sm">Meu Contrato Solar</span>
+                    <span className="hidden md:block">Meu Contrato Solar</span>
+                  </h1>
+                </div>
               </Link>
             </div>
             <div className="flex items-center space-x-4">
@@ -43,7 +46,9 @@ export default function LandingPage() {
       <div className="pt-32 pb-20 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto text-center">
           <h1 className="text-4xl sm:text-5xl font-bold text-gray-900 mb-8 leading-tight">
-            Gere contratos em poucos cliques
+            <span className="block md:hidden">Gere contratos</span>
+            <span className="block md:hidden">em poucos cliques</span>
+            <span className="hidden md:block">Gere contratos em poucos cliques</span>
           </h1>
           <p className="text-xl text-gray-600 mb-12 leading-relaxed">
             Contratos de energia solar personalizados, prontos rapidamente. Sem complicação.

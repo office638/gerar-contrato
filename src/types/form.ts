@@ -24,10 +24,10 @@ export type MaritalStatus = {
 };
 
 export const maritalStatusOptions: MaritalStatus[] = [
-  { value: 'Single', label: 'Solteiro(a)' },
-  { value: 'Married', label: 'Casado(a)' },
-  { value: 'Divorced', label: 'Divorciado(a)' },
-  { value: 'Widowed', label: 'Viúvo(a)' }
+  { value: 'Single', label: 'Solteiro(a)', translation: 'Solteiro(a)' },
+  { value: 'Married', label: 'Casado(a)', translation: 'Casado(a)' },
+  { value: 'Divorced', label: 'Divorciado(a)', translation: 'Divorciado(a)' },
+  { value: 'Widowed', label: 'Viúvo(a)', translation: 'Viúvo(a)' }
 ];
 
 export type InstallationLocation = {

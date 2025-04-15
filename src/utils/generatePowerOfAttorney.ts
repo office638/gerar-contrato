@@ -67,7 +67,7 @@ export async function generatePowerOfAttorney(formData: FormProgress['data']): P
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(0, 0, 0);
   
-  const mainText = `Eu, ${formData.customerInfo?.fullName.toUpperCase()}, portador(a) do CPF ${formData.customerInfo?.cpf}, residente em ${formData.installationLocation?.street.toUpperCase()}, ${formData.installationLocation?.number} - ${formData.installationLocation?.neighborhood.toUpperCase()}, ${formData.installationLocation?.city.toUpperCase()}/${formData.installationLocation?.state}, Autorizo o TÉCNICO EM ELETROTÉCNICA Diogo Castro Alves Rodrigues, com Registro Nacional no CRT-01: 03828143121 e Processo de Registro: 50641282023, a me representar junto à concessionária, ${formData.installationLocation?.utilityCompany.toUpperCase() || ''}, para tratar de assuntos relacionados ao acesso de geração distribuída.`;
+  const mainText = `Eu, ${formData.customerInfo?.fullName.toUpperCase()}, portador(a) do CPF ${formData.customerInfo?.cpf}, residente em ${formData.installationLocation?.street.toUpperCase()}, ${formData.installationLocation?.number} - ${formData.installationLocation?.neighborhood.toUpperCase()}, ${formData.installationLocation?.city.toUpperCase()}/${formData.installationLocation?.state}, Autorizo o TÉCNICO EM ELETROTÉCNICA Diogo Castro Alves Rodrigues, com Registro Nacional no CRT-01: 03828143121 e Processo de Registro: 50641282023, a me representar junto à concessionária ${formData.installationLocation?.utilityCompany?.toUpperCase()}, para tratar de assuntos relacionados ao acesso de geração distribuída.`;
 
   yPos = addMultiLineText(mainText, 20, yPos, 170);
   yPos += 40;

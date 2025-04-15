@@ -9,6 +9,7 @@ import { PaymentMethod, paymentMethods } from '../types/form';
 import { DollarSign, CalendarDays, Loader2, Trash2, ArrowLeft, ArrowRight } from 'lucide-react';
 import DatePicker from 'react-datepicker';
 import "react-datepicker/dist/react-datepicker.css";
+import { supabase } from '../lib/supabase';
 
 const schema = z.object({
   installments: z.array(z.object({
@@ -259,22 +260,22 @@ export default function FinancialTermsForm() {
           </button>
 
          <button
-  type="button"
-  onClick={() => {
-    reset({
-      installments: [{ 
-        method: 'Transferência', 
-        amount: 0, 
-        dueDate: new Date() 
-      }],
-      totalAmount: 0
-    });
-  }}
-  className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 flex items-center"
->
-  <Trash2 className="w-4 h-4 mr-2" />
-  Limpar Campos
-</button>
+            type="button"
+            onClick={() => {
+              reset({
+                installments: [{ 
+                  method: 'Transferência', 
+                  amount: 0, 
+                  dueDate: new Date() 
+                }],
+                totalAmount: 0
+              });
+            }}
+            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 flex items-center"
+          >
+            <Trash2 className="w-4 h-4 mr-2" />
+            Limpar Campos
+          </button>
 
           <button
             type="submit"

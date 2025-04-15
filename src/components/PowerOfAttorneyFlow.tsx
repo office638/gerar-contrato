@@ -15,6 +15,7 @@ const schema = z.object({
   cpf: z.string().regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, 'CPF inválido'),
   rg: z.string().max(20),
   issuingAuthority: z.string().max(50),
+  utilityCompany: z.string().min(1, 'Nome da concessionária é obrigatório'),
   street: z.string().min(3).max(200),
   number: z.string().max(20),
   neighborhood: z.string().max(100),
@@ -104,7 +105,7 @@ export default function PowerOfAttorneyFlow() {
           state: data.state,
           zipCode: '',
           utilityCode: '',
-          utilityCompany: '',
+          utilityCompany: data.utilityCompany,
           installationType: 'Residential'
         }
       });
@@ -202,6 +203,21 @@ export default function PowerOfAttorneyFlow() {
                 <p className="text-red-500 text-sm">{errors.issuingAuthority.message}</p>
               )}
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-700">
+              Concessionária
+            </label>
+            <input
+              type="text"
+              {...register('utilityCompany')}
+              className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Nome da Concessionária"
+            />
+            {errors.utilityCompany && (
+              <p className="text-red-500 text-sm">{errors.utilityCompany.message}</p>
+            )}
           </div>
         </div>
 

@@ -17,7 +17,7 @@ export async function generateContract(formData: FormProgress['data']): Promise<
   const footerY = pageHeight - 30; // 30 unidades do final da página
   
   // Adiciona a logo no rodapé (canto direito)
-  doc.addImage('https://imgur.com/DT6IwWn.jpg', 'PNG', pageWidth - 50, footerY, 30, 30 * 0.3);
+  doc.addImage('https://i.imgur.com/J9lB0MV.jpg', 'PNG', pageWidth - 50, footerY, 30, 30 * 0.3);
   
   // Adiciona o número da página (agora no canto esquerdo)
   doc.setFontSize(8);
@@ -26,14 +26,14 @@ export async function generateContract(formData: FormProgress['data']): Promise<
 
 
   const addLogo = (doc: any, x: number, y: number, width: number) => {
-  const logoUrl = 'https://imgur.com/DT6IwWn.jpg';
+  const logoUrl = 'https://i.imgur.com/J9lB0MV.jpg';
   const pageWidth = doc.internal.pageSize.width;
   try {
     // Adiciona a logo no canto direito
     doc.addImage(logoUrl, 'PNG', pageWidth - 50, y, width, width * 0.3);
     return y + (width * 0.3) + 5;
   } catch (error) {
-    console.error('Erro ao adicionar logo:', error);
+    console.error('Error adding logo:', error);
     return y;
   }
 };

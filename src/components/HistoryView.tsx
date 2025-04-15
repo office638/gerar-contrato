@@ -1,10 +1,12 @@
 import React from 'react';
 import { useQuery } from 'react-query';
 import { supabase } from '../lib/supabase';
-import { Loader2, Trash2, FileText, Eye } from 'lucide-react';
+import { Loader2, Trash2, Eye, PenSquare } from 'lucide-react';
 import { format } from 'date-fns'; 
 import { useAtom } from 'jotai';
 import { formProgressAtom } from '../store/form';
+import { generateContract } from '../utils/generateContract';
+import { generatePowerOfAttorney } from '../utils/generatePowerOfAttorney';
 
 interface HistoryViewProps {
   type: 'contract' | 'power-of-attorney';
@@ -14,6 +16,7 @@ interface HistoryViewProps {
 export default function HistoryView({ type, onSelect }: HistoryViewProps) {
   const [isDeleting, setIsDeleting] = React.useState(false);
   const [, setFormProgress] = useAtom(formProgressAtom);
+  const [isGenerating, setIsGenerating] = React.useState(false);
 
   const { data: records, isLoading, refetch } = useQuery(
     ['history', type],
@@ -56,6 +59,126 @@ export default function HistoryView({ type, onSelect }: HistoryViewProps) {
     }
   );
 
+  const handlePreview = async (record: any) => {
+    try {
+      setIsGenerating(true);
+      
+      let blob;
+      if (type === 'contract') {
+        // Fetch all related data for contract preview
+        const [locationRes, technicalRes, financialRes] = await Promise.all([
+          supabase.from('installation_locations').select('*').eq('customer_id', record.id).maybeSingle(),
+          supabase.from('technical_configs').select('*').eq('customer_id', record.id).maybeSingle(),
+          supabase.from('financial_terms').select('*').eq('customer_id', record.id).maybeSingle()
+        ]);
+
+        let installments = [];
+        if (financialRes.data?.id) {
+          const { data: installmentsData } = await supabase
+            .from('installments')
+            .select('*')
+            .eq('financial_terms_id', financialRes.data.id);
+            
+          if (installmentsData) {
+            installments = installmentsData.map(inst => ({
+              method: inst.method,
+              amount: inst.amount,
+              dueDate: new Date(inst.due_date)
+            }));
+          }
+        }
+
+        const data = {
+          customerInfo: {
+            fullName: record.full_name,
+            cpf: record.cpf,
+            rg: record.rg,
+            issuingAuthority: record.issuing_authority,
+            profession: record.profession,
+            nationality: record.nationality,
+            phone: record.phone,
+            email: record.email,
+            maritalStatus: record.marital_status
+          },
+          installationLocation: locationRes.data ? {
+            street: locationRes.data.street,
+            number: locationRes.data.number,
+            neighborhood: locationRes.data.neighborhood,
+            city: locationRes.data.city,
+            state: locationRes.data.state,
+            zipCode: locationRes.data.zip_code,
+            utilityCode: locationRes.data.utility_code,
+            utilityCompany: locationRes.data.utility_company,
+            installationType: locationRes.data.installation_type
+          } : undefined,
+          technicalConfig: technicalRes.data ? {
+            inverter1: {
+              brand: technicalRes.data.inverter1_brand,
+              power: technicalRes.data.inverter1_power,
+              quantity: technicalRes.data.inverter1_quantity,
+              warrantyPeriod: technicalRes.data.inverter1_warranty_period
+            },
+            inverter2: technicalRes.data.inverter2_brand ? {
+              brand: technicalRes.data.inverter2_brand,
+              power: technicalRes.data.inverter2_power,
+              quantity: technicalRes.data.inverter2_quantity,
+              warrantyPeriod: technicalRes.data.inverter2_warranty_period
+            } : undefined,
+            solarModules: {
+              brand: technicalRes.data.solar_modules_brand,
+              power: technicalRes.data.solar_modules_power,
+              quantity: technicalRes.data.solar_modules_quantity
+            },
+            installationType: technicalRes.data.installation_type,
+            installationDays: technicalRes.data.installation_days
+          } : undefined,
+          financialTerms: financialRes.data ? {
+            totalAmount: financialRes.data.total_amount,
+            installments
+          } : undefined
+        };
+        
+        blob = await generateContract(data);
+      } else {
+        // For power of attorney
+        blob = await generatePowerOfAttorney({
+          customerInfo: {
+            fullName: record.full_name,
+            cpf: record.cpf,
+            rg: record.rg,
+            issuingAuthority: record.issuing_authority,
+            nationality: 'Brasileiro(a)',
+            profession: '',
+            phone: '',
+            email: '',
+            maritalStatus: 'Single'
+          },
+          installationLocation: {
+            street: record.street,
+            number: record.number,
+            neighborhood: record.neighborhood,
+            city: record.city,
+            state: record.state,
+            zipCode: '',
+            utilityCode: '',
+            utilityCompany: '',
+            installationType: 'Residential'
+          }
+        });
+      }
+
+      // Open PDF in new tab
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error previewing document:', error);
+      alert('Erro ao visualizar documento. Por favor, tente novamente.');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (!window.confirm('Tem certeza que deseja excluir este registro?')) {
       return;
@@ -80,6 +203,7 @@ export default function HistoryView({ type, onSelect }: HistoryViewProps) {
   const handleSelectRecord = async (record: any) => {
     try {
       if (type === 'contract') {
+        // Fetch all related data
         const [locationRes, technicalRes, financialRes] = await Promise.all([
           supabase.from('installation_locations').select('*').eq('customer_id', record.id).maybeSingle(),
           supabase.from('technical_configs').select('*').eq('customer_id', record.id).maybeSingle(),
@@ -87,13 +211,14 @@ export default function HistoryView({ type, onSelect }: HistoryViewProps) {
         ]);
 
         let installments = [];
-        if (financialRes.data?.id) {
+        // Fetch installments if we have financial terms
+        if (financialRes.data) {
           const { data: installmentsData } = await supabase
             .from('installments')
             .select('*')
             .eq('financial_terms_id', financialRes.data.id);
             
-          if (installmentsData) {
+          if (installmentsData?.length) {
             installments = installmentsData.map(inst => ({
               method: inst.method,
               amount: inst.amount,
@@ -102,6 +227,7 @@ export default function HistoryView({ type, onSelect }: HistoryViewProps) {
           }
         }
 
+        // Set form progress with all data
         setFormProgress({
           currentStep: 'customer-info',
           completedSteps: [
@@ -164,6 +290,9 @@ export default function HistoryView({ type, onSelect }: HistoryViewProps) {
             financialTermsId: financialRes.data?.id
           }
         });
+        
+        // Close history view and navigate to form
+        onSelect();
       } else {
         setFormProgress({
           currentStep: null,
@@ -182,9 +311,10 @@ export default function HistoryView({ type, onSelect }: HistoryViewProps) {
             }
           }
         });
-        
-        onSelect();
       }
+      
+      // Close history view in both cases
+      onSelect();
     } catch (error) {
       console.error('Error loading record data:', error);
       alert('Erro ao carregar dados do registro');
@@ -252,6 +382,13 @@ export default function HistoryView({ type, onSelect }: HistoryViewProps) {
                 <td className="px-6 py-4 whitespace-nowrap text-right">
                   <div className="flex justify-end space-x-2">
                     <button
+                      onClick={() => handlePreview(record)}
+                      disabled={isGenerating}
+                      className="text-blue-600 hover:text-blue-900"
+                    >
+                      <Eye className="w-5 h-5" />
+                    </button>
+                    <button
                       onClick={() => handleDelete(record.id)}
                       disabled={isDeleting}
                       className="text-red-600 hover:text-red-900"
@@ -262,7 +399,7 @@ export default function HistoryView({ type, onSelect }: HistoryViewProps) {
                       onClick={() => handleSelectRecord(record)}
                       className="text-blue-600 hover:text-blue-900"
                     >
-                      <Eye className="w-5 h-5" />
+                      <PenSquare className="w-5 h-5" />
                     </button>
                   </div>
                 </td>
