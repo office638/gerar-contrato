@@ -4,7 +4,7 @@ export const contractTemplate = {
 
 1.1 A CONTRATADA compromete-se a prestar os serviços de instalação do sistema fotovoltaico, bem como tratativas com a concessionária de distribuição de energia elétrica.
 
-Parágrafo 1º - Se necessário, mediante aviso ao CONTRATANTE, será alterado qualquer item composto do Sistema descrito acima (Módulos / Inversores / Etc). Tal ato poderá ocorrer para o não atraso no cronograma ou por falta de estoque do produto acima pelo fornecedor.`,
+Parágrafo 1º: A CONTRATADA poderá, caso necessário, substituir marcas, modelos ou potências dos equipamentos especificados (como módulos, inversores e demais componentes), desde que os itens substituídos possuam qualidade técnica equivalente ou superior. Tal substituição poderá ocorrer por motivos como indisponibilidade em estoque, descontinuidade do fornecedor ou necessidade de manutenção do cronograma da obra.`,
 
     price: `2 - PREÇO E FORMA DE PAGAMENTO
 
@@ -49,7 +49,7 @@ O CONTRATANTE obriga-se a:
 
 4.6 Disponibilizar área mínima de 60m² necessária para instalação do projeto;
 
-4.7 Realizar manutenção preventiva dos painéis (limpeza a cada 6 meses);
+4.7 Realizar a manutenção preventiva do sistema fotovoltaico, incluindo a limpeza dos módulos a cada 6 (seis) meses e, pelo menos uma vez a cada 12 (doze) a 24 (vinte e quatro) meses, a verificação técnica dos componentes do sistema, como bornes dos disjuntores, grampos de fixação da estrutura, aterramento e conexões elétricas em geral, a fim de assegurar o desempenho, a segurança e a durabilidade da instalação;
 
 4.8 Para clientes rurais ou optantes por auto leitura, realizá-la conforme datas da concessionária. A CONTRATADA não se responsabiliza por custos devido à falta de envio;
 
@@ -57,7 +57,7 @@ O CONTRATANTE obriga-se a:
 
 4.10 Realizar adequações no padrão elétrico, caso necessário;
 
-4.11 Em locais sem internet ou com inversores desconectados, a CONTRATADA não se responsabiliza por falhas, perdas, alertas ou quebra de garantia;
+4.11 Em locais sem internet ou com inversores desconectados, o CONTRATANTE assume o risco de não identificar falhas de geração ou perdas de eficiência em tempo hábil, não podendo imputar tais prejuízos à CONTRATADA, incluindo possíveis impactos sobre garantias ou perdas operacionais decorrentes da ausência de monitoramento contínuo do sistema;
 
 4.12 Conforme a Lei 14.300/22, a cobrança do FIO B será feita de forma gradual: 15% (2023), 30% (2024), até 100% (2029). Mesmo sem aumento no consumo, a fatura aumentará;
 
@@ -137,9 +137,7 @@ Parágrafo 4º - Alterações ou violações nos equipamentos anulam suas respec
 
 9.1 O dimensionamento do sistema fotovoltaico é efetuado com base em histórico de consumo fornecido pelo CONTRATANTE. Qualquer mudança substancial no perfil de consumo (aquisição de novos equipamentos de alto consumo, reforma que aumente a carga, etc.) poderá demandar redimensionamento do sistema, não estando inclusa no presente contrato.
 
-9.2 A CONTRATADA não poderá ser responsabilizada por aumento de fatura decorrente de acréscimo de consumo, devendo as partes firmar novo acordo caso se deseje expandir ou adaptar o sistema para a nova demanda.
-
-9.3 Em locais sem internet ou com inversores desconectados, o CONTRATANTE assume o risco de não identificar falhas de geração ou perdas de eficiência em tempo hábil, não podendo imputar tais prejuízos à CONTRATADA.`,
+9.2 A CONTRATADA não poderá ser responsabilizada por aumento de fatura decorrente de acréscimo de consumo, devendo as partes firmar novo acordo caso se deseje expandir ou adaptar o sistema para a nova demanda.`,
 
     finalProvisions: `10 - DISPOSIÇÕES FINAIS
 

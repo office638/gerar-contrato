@@ -1,23 +1,6 @@
 import { useMutation, useQueryClient } from 'react-query';
 import { supabase } from '../lib/supabase';
 
-async function getCurrentUser() {
-  const { data: { user }, error } = await supabase.auth.getUser();
-  if (error) throw error;
-  return user;
-}
-
-async function findExistingCustomer(cpf: string) {
-  const { data, error } = await supabase
-    .from('customers')
-    .select('id')
-    .eq('cpf', cpf)
-    .maybeSingle();
-
-  if (error) throw error;
-  return data?.id;
-}
-
 export function useSupabaseMutation(table: string) {
   const queryClient = useQueryClient();
 
@@ -27,54 +10,53 @@ export function useSupabaseMutation(table: string) {
         throw new Error('Table name is required');
       }
 
-      const { id, ...cleanData } = data;
+      const { id, cpf, ...cleanData } = data;
       
       try {
-        const user = await getCurrentUser();
-        if (!user) {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
           throw new Error('User must be authenticated');
         }
 
         const dataWithUser = {
           ...cleanData,
+          cpf,
           user_id: user.id
         };
 
-        // For customers table, check if CPF exists
-        let existingId = id;
-        if (table === 'customers' && cleanData.cpf) {
-          existingId = await findExistingCustomer(cleanData.cpf);
+        // Check for existing record
+        let existingRecord = null;
+        if (table === 'customers' && cpf) {
+          const { data: existing } = await supabase
+            .from(table)
+            .select('id')
+            .eq('cpf', cpf)
+            .maybeSingle();
+          existingRecord = existing;
         }
 
-        let query;
-        if (existingId) {
-          // Update with upsert
-          query = supabase
+        // If record exists, update it
+        if (existingRecord) {
+          const { data: result, error } = await supabase
             .from(table)
-            .upsert({ id: existingId, ...dataWithUser })
+            .update(dataWithUser)
+            .eq('id', existingRecord.id)
             .select()
             .single();
+
+          if (error) throw error;
+          return result;
         } else {
-          // Insert new record
-          query = supabase
+          // Insert new record if no existing record found
+          const { data: result, error } = await supabase
             .from(table)
             .insert(dataWithUser)
             .select()
             .single();
+          
+          if (error) throw error;
+          return result;
         }
-
-        const { data: result, error } = await query;
-
-        if (error) {
-          console.error(`[${table}] Operation error:`, error);
-          throw new Error(`Failed to ${existingId ? 'update' : 'create'} record in ${table}: ${error.message}`);
-        }
-
-        if (!result) {
-          throw new Error(`No data returned from ${table} operation`);
-        }
-
-        return result;
 
       } catch (error) {
         console.error(`[${table}] Operation error:`, error);

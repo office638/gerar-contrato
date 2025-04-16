@@ -40,7 +40,15 @@ export async function generateContract(formData: FormProgress['data']): Promise<
 
 
   const cleanContent = (text: string) =>
-    text.replace(/\n{2,}/g, '\n').replace(/\n(?=\d+\s?-\s?[A-Z])/, '').trim();
+    text.split('\n')
+      .filter((line, index, arr) => {
+        // Remove the title line that appears in the content
+        if (index === 0 && line.match(/^\d+\s*-/)) return false;
+        return true;
+      })
+      .join('\n')
+      .replace(/\n{2,}/g, '\n')
+      .trim();
 
   const addMultiLineText = (
   text: string,
@@ -84,11 +92,14 @@ export async function generateContract(formData: FormProgress['data']): Promise<
   yPos: number,
   fontSize = 10
 ) => {
-  // Adiciona o título em negrito
-  yPos = addMultiLineText(title, 20, yPos, 170, fontSize + 2, 'bold');
+  // Extract just the title without the content
+  const titleOnly = title.split('\n')[0];
+  
+  // Add title in bold
+  yPos = addMultiLineText(titleOnly, 20, yPos, 170, fontSize + 2, 'bold');
   yPos += 3;
-
-  // Adiciona o conteúdo normal
+  
+  // Add content in normal font
   yPos = addMultiLineText(cleanContent(content), 20, yPos, 170, fontSize, 'normal');
 
   return yPos + 6;
@@ -103,14 +114,6 @@ export async function generateContract(formData: FormProgress['data']): Promise<
 };
 
 
-  // Payment method translation map
-  const paymentMethodTranslation: Record<string, string> = {
-    'Transfer': 'Transferência',
-    'BankSlip': 'Boleto',
-    'Pix': 'Pix',
-    'Financing': 'Financiamento'
-  };
-
   let yPos = 20;
   yPos = addLogo(doc, doc.internal.pageSize.width - 50, yPos, 30);
   yPos += 5;
@@ -124,7 +127,7 @@ export async function generateContract(formData: FormProgress['data']): Promise<
   doc.text('IDENTIFICAÇÃO DAS PARTES CONTRATADAS', 20, yPos);
   yPos += 7;
 
-  const companyInfo = `CONTRATADA: ECOENERGI SOLAR, PESSOA JURÍDICA DE DIREITO PRIVADO, INSCRITA NO CNPJ SOB O N° 12.276.329.0001-69, COM SEDE NA RUA DEPUTADO JÚLIO CÉSAR PAULINO MAIA - N°1410S- CENTRO, NA CIDADE DE SANTA RITA DO PARDO - MS, COM CEP: 79690-000, NESTE ATO REPRESENTADA POR DIOGO CASTRO ALVES RODRIGUES, INSCRITO NO CPF SOB O N° 058.281.431-21.`;
+  const companyInfo = `CONTRATADA: ECOENERGI SOLAR, PESSOA JURÍDICA DE DIREITO PRIVADO, INSCRITA NO CNPJ SOB O N° 12.276.329.0001-69, COM SEDE NA RUA DEPUTADO JÚLIO CÉSAR PAULINO MAIA - N°1346- CENTRO, NA CIDADE DE SANTA RITA DO PARDO - MS, COM CEP: 79690-000, NESTE ATO REPRESENTADA POR DIOGO CASTRO ALVES RODRIGUES, INSCRITO NO CPF SOB O N° 038.281.431-21.`;
   yPos = addMultiLineText(companyInfo, 20, yPos, 170);
   yPos += 4;
 
@@ -153,7 +156,9 @@ export async function generateContract(formData: FormProgress['data']): Promise<
 Dentre os principais materiais estão inclusos:
 - ${formData.technicalConfig?.inverter1.quantity} Inversor(es) ${formData.technicalConfig?.inverter1.brand} de ${formData.technicalConfig?.inverter1.power}kW de Potência de Saída
 - ${formData.technicalConfig?.solarModules.quantity} Módulos Solares ${formData.technicalConfig?.solarModules.brand} ${formData.technicalConfig?.solarModules.power}W de Potência
-- Estrutura para fixação dos módulos instalados em ${formData.technicalConfig?.installationType === 'Roof' ? 'Telhado' : 'Solo'}`;
+- Estrutura para fixação dos módulos instalados em ${formData.technicalConfig?.installationType === 'Roof' ? 'Telhado' : 'Solo'}
+
+Parágrafo 1º: A CONTRATADA poderá, caso necessário, substituir marcas, modelos ou potências dos equipamentos especificados (como módulos, inversores e demais componentes), desde que os itens substituídos possuam qualidade técnica equivalente ou superior. Tal substituição poderá ocorrer por motivos como indisponibilidade em estoque, descontinuidade do fornecedor ou necessidade de manutenção do cronograma da obra.`;
   yPos = addSection('1 - DO OBJETO DO PRESENTE CONTRATO', objectContent, yPos);
 
   if (yPos > 240) yPos = addPage();
@@ -163,10 +168,10 @@ Dentre os principais materiais estão inclusos:
   let paymentTerms = '';
 
   if (installments.length === 1) {
-    paymentTerms = `Pagamento único no valor de R$ ${installments[0].amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} a ser pago via ${paymentMethodTranslation[installments[0].method]} com vencimento em ${format(installments[0].dueDate, 'dd/MM/yyyy')}.`;
+    paymentTerms = `Pagamento único no valor de R$ ${installments[0].amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} a ser pago via ${installments[0].method} com vencimento em ${format(installments[0].dueDate, 'dd/MM/yyyy')}.`;
   } else {
     paymentTerms = installments.map((inst, index) =>
-      `Parcela ${index + 1}: R$ ${inst.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} via ${paymentMethodTranslation[inst.method]} com vencimento em ${format(inst.dueDate, 'dd/MM/yyyy')}`
+      `Parcela ${index + 1}: R$ ${inst.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} via ${inst.method} com vencimento em ${format(inst.dueDate, 'dd/MM/yyyy')}`
     ).join('\n');
   }
 
@@ -196,13 +201,24 @@ const warrantyContent = contractTemplate.clauses.warranties.replace(
     if (yPos > 240) yPos = addPage();
     
     if (key === 'warranties') {
-      yPos = addSection(content.split('\n')[0].trim(), warrantyContent, yPos);
+      yPos = addSection('7 - DAS GARANTIAS', cleanContent(warrantyContent), yPos);
     } else if (key === 'clientDuties') {
-      yPos = addSection(content.split('\n')[0].trim(), clientDutiesContent, yPos);
+      yPos = addSection('4 - DOS DEVERES E OBRIGAÇÕES DO CONTRATANTE', cleanContent(clientDutiesContent), yPos);
     } else if (key === 'deadlines') {
-      yPos = addSection(content.split('\n')[0].trim(), deadlinesContent, yPos);
+      yPos = addSection('5 - PRAZOS E CRONOGRAMA', cleanContent(deadlinesContent), yPos);
+    } else if (key === 'contractorDuties') {
+      yPos = addSection('3 - DOS DEVERES E OBRIGAÇÕES DA CONTRATADA', cleanContent(content), yPos);
+    } else if (key === 'termination') {
+      yPos = addSection('6 - DA RESCISÃO E DAS PENALIDADES CONTRATUAIS', cleanContent(content), yPos);
+    } else if (key === 'liabilityOnTariffs') {
+      yPos = addSection('8 - DA LIMITAÇÃO DE RESPONSABILIDADE SOBRE TARIFAS E REGULAMENTOS', cleanContent(content), yPos);
+    } else if (key === 'consumptionProfile') {
+      yPos = addSection('9 - DA ALTERAÇÃO DE PERFIL DE CONSUMO E DIMENSIONAMENTO DO SISTEMA', cleanContent(content), yPos);
+    } else if (key === 'finalProvisions') {
+      yPos = addSection('10 - DISPOSIÇÕES FINAIS', cleanContent(content), yPos);
     } else {
-      yPos = addSection(content.split('\n')[0].trim(), cleanContent(content), yPos);
+      const title = content.split('\n')[0].trim();
+      yPos = addSection(title, cleanContent(content), yPos);
     }
   }
 });

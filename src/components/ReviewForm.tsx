@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAtom } from 'jotai';
 import { formProgressAtom } from '../store/form';
-import { paymentMethods } from '../types/form';
+import { paymentMethods, maritalStatusOptions } from '../types/form';
 import { FileText, User, MapPin, Zap, DollarSign, Loader2, FileSignature, ArrowLeft, ExternalLink } from 'lucide-react';
 import { generateContract } from '../utils/generateContract';
 import { generatePowerOfAttorney } from '../utils/generatePowerOfAttorney';
@@ -86,7 +86,11 @@ export default function ReviewForm() {
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500">Estado Civil</p>
-              <p className="text-gray-900">{formProgress.data.customerInfo?.maritalStatus}</p>
+              <p className="text-gray-900">
+                {maritalStatusOptions.find(
+                  status => status.value === formProgress.data.customerInfo?.maritalStatus
+                )?.translation || formProgress.data.customerInfo?.maritalStatus}
+              </p>
             </div>
             <div>
               <p className="text-sm font-medium text-gray-500">CPF</p>

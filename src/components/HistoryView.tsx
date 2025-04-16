@@ -203,31 +203,32 @@ export default function HistoryView({ type, onSelect }: HistoryViewProps) {
   const handleSelectRecord = async (record: any) => {
     try {
       if (type === 'contract') {
-        // Fetch all related data
         const [locationRes, technicalRes, financialRes] = await Promise.all([
           supabase.from('installation_locations').select('*').eq('customer_id', record.id).maybeSingle(),
           supabase.from('technical_configs').select('*').eq('customer_id', record.id).maybeSingle(),
           supabase.from('financial_terms').select('*').eq('customer_id', record.id).maybeSingle()
         ]);
 
+        console.log('Fetched data:', { locationRes, technicalRes, financialRes });
+
         let installments = [];
-        // Fetch installments if we have financial terms
         if (financialRes.data) {
           const { data: installmentsData } = await supabase
             .from('installments')
             .select('*')
             .eq('financial_terms_id', financialRes.data.id);
             
+          console.log('Fetched installments:', installmentsData);
+
           if (installmentsData?.length) {
             installments = installmentsData.map(inst => ({
               method: inst.method,
               amount: inst.amount,
-              dueDate: new Date(inst.due_date)
+              dueDate: inst.due_date ? new Date(inst.due_date) : new Date()
             }));
           }
         }
 
-        // Set form progress with all data
         setFormProgress({
           currentStep: 'customer-info',
           completedSteps: [

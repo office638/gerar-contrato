@@ -128,6 +128,7 @@ export default function CustomerInfoForm() {
       }
       
       const savedCustomer = await saveCustomer({
+        id: formProgress.data.customerId,
         full_name: data.fullName,
         cpf: data.cpf,
         rg: data.rg,
@@ -145,14 +146,9 @@ export default function CustomerInfoForm() {
         currentStep: 'installation-location',
         completedSteps: [...prev.completedSteps, 'customer-info'],
         data: {
+          ...prev.data,
           customerId: savedCustomer.id,
-          customerInfo: data,
-          installationLocation: undefined,
-          technicalConfig: undefined,
-          financialTerms: undefined,
-          installationLocationId: undefined,
-          technicalConfigId: undefined,
-          financialTermsId: undefined
+          customerInfo: data
         }
       }));
     } catch (error) {
