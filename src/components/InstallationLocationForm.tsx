@@ -8,7 +8,6 @@ import { formProgressAtom } from '../store/form';
 import { useSupabaseMutation } from '../hooks/useSupabaseMutation';
 import { MapPin, Building2, Hash, Home, Loader2, Zap, ArrowLeft, ArrowRight, Trash2 } from 'lucide-react';
 
-
 const brazilianStates = [
   'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG',
   'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
@@ -43,24 +42,30 @@ export default function InstallationLocationForm() {
     register,
     handleSubmit,
     reset,
-    formState: { isValid },
+    setValue,
     formState: { errors }
   } = useForm<InstallationLocation>({
     resolver: zodResolver(schema),
-    defaultValues: formProgress.data.installationLocation,
-    mode: 'onChange'
+    defaultValues: formProgress.data.installationLocation
   });
+
+  // Load existing data when component mounts
+  React.useEffect(() => {
+    if (formProgress.data.installationLocation) {
+      Object.entries(formProgress.data.installationLocation).forEach(([key, value]) => {
+        setValue(key as keyof InstallationLocation, value);
+      });
+    }
+  }, [formProgress.data.installationLocation, setValue]);
 
   const onSubmit = async (data: InstallationLocation) => {
     try {
       setIsSubmitting(true);
       
-      // Only proceed if we have a valid customer ID
       if (!formProgress.data.customerId) {
         throw new Error('Por favor, preencha as informações do cliente primeiro.');
       }
       
-      // Save or update the location data
       const savedLocation = await saveLocation({
         id: formProgress.data.installationLocationId,
         customer_id: formProgress.data.customerId,
@@ -74,8 +79,7 @@ export default function InstallationLocationForm() {
         utility_company: data.utilityCompany,
         installation_type: data.installationType
       });
-      
-      // Then update the form progress
+
       setFormProgress(prev => ({
         ...prev,
         currentStep: 'technical-config',
@@ -88,7 +92,6 @@ export default function InstallationLocationForm() {
       }));
     } catch (error) {
       console.error('Error saving installation location:', error);
-      // Show a more specific error message
       if (error instanceof Error) {
         alert(error.message);
       } else {
@@ -97,6 +100,10 @@ export default function InstallationLocationForm() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleNext = () => {
+    handleSubmit(onSubmit)();
   };
 
   return (
@@ -257,17 +264,9 @@ export default function InstallationLocationForm() {
           </button>
 
           <button
-            type="submit"
+            type="button"
+            onClick={handleNext}
             disabled={isSubmitting}
-            onClick={() => {
-              if (!isSubmitting) {
-                setFormProgress(prev => ({
-                  ...prev,
-                  currentStep: 'technical-config',
-                  completedSteps: Array.from(new Set([...prev.completedSteps, 'installation-location']))
-                }));
-              }
-            }}
             className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
           >
             {isSubmitting ? (
