@@ -13,8 +13,13 @@ import { useEffect } from 'react';
 
 const schema = z.object({
   fullName: z.string().min(3).max(100),
-  maritalStatus: z.enum(['Single', 'Married', 'Divorced', 'Widowed']),
-  cpf: z.string().regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, 'CPF inválido'),
+  maritalStatus: z.enum(['Single', 'Married', 'Divorced', 'Widowed', '']).optional(),
+  cpf: z.string().refine((val) => {
+    // Remove pontuação para validar apenas números
+    const numbers = val.replace(/\D/g, '');
+    // Aceita CPF (11 dígitos) ou CNPJ (14 dígitos)
+    return numbers.length === 11 || numbers.length === 14;
+  }, 'CPF deve ter 11 dígitos ou CNPJ deve ter 14 dígitos'),
   rg: z.string().max(20),
   issuingAuthority: z.string().max(50),
   profession: z.string().max(100),
@@ -29,6 +34,7 @@ export default function CustomerInfoForm() {
   const [cpfError, setCpfError] = React.useState<string | null>(null);
   const [authError, setAuthError] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [documentType, setDocumentType] = React.useState<'cpf' | 'cnpj'>('cpf');
   const { mutateAsync: saveCustomer } = useSupabaseMutation('customers');
 
   const {
@@ -42,11 +48,24 @@ export default function CustomerInfoForm() {
     resolver: zodResolver(schema),
     defaultValues: {
       nationality: 'Brasileiro(a)',
+      maritalStatus: '',
       ...formProgress.data.customerInfo
     }
   });
 
   const cpf = watch('cpf');
+
+  // Detectar automaticamente se é CPF ou CNPJ baseado no comprimento
+  React.useEffect(() => {
+    if (cpf) {
+      const numbers = cpf.replace(/\D/g, '');
+      if (numbers.length <= 11) {
+        setDocumentType('cpf');
+      } else {
+        setDocumentType('cnpj');
+      }
+    }
+  }, [cpf]);
 
   // Check authentication status on component mount
   useEffect(() => {
@@ -77,9 +96,9 @@ export default function CustomerInfoForm() {
     }
   }, [formProgress.data.customerInfo, setValue]);
 
-  // Check if CPF exists when the field loses focus
+  // Check if CPF/CNPJ exists when the field loses focus
   const checkCpfExists = async (cpf: string) => {
-    if (!cpf || cpf.includes('_')) return; // Don't check incomplete CPFs
+    if (!cpf || cpf.includes('_')) return; // Don't check incomplete CPFs/CNPJs
     
     try {
       const { data: existingCustomer, error } = await supabase
@@ -96,14 +115,14 @@ export default function CustomerInfoForm() {
           setCpfError(null);
           return false;
         } else {
-          setCpfError(`CPF já cadastrado para o cliente: ${existingCustomer.full_name}`);
+          setCpfError(`${documentType.toUpperCase()} já cadastrado para o cliente: ${existingCustomer.full_name}`);
           return true;
         }
       }
       setCpfError(null);
       return false;
     } catch (error) {
-      console.error('Error checking CPF:', error);
+      console.error('Error checking CPF/CNPJ:', error);
       return false;
     }
   };
@@ -120,12 +139,15 @@ export default function CustomerInfoForm() {
         return;
       }
       
-      // Check CPF one last time before submitting
+      // Check CPF/CNPJ one last time before submitting
       const isInvalidCpf = await checkCpfExists(data.cpf);
       if (isInvalidCpf) {
         setIsSubmitting(false);
         return;
       }
+      
+      // Para CNPJ, definir maritalStatus como null se estiver vazio
+      const maritalStatus = documentType === 'cnpj' ? null : data.maritalStatus;
       
       const savedCustomer = await saveCustomer({
         id: formProgress.data.customerId,
@@ -137,7 +159,7 @@ export default function CustomerInfoForm() {
         nationality: data.nationality,
         phone: data.phone,
         email: data.email,
-        marital_status: data.maritalStatus
+        marital_status: maritalStatus
       });
       
       // Store the customer ID for linking other records
@@ -148,13 +170,16 @@ export default function CustomerInfoForm() {
         data: {
           ...prev.data,
           customerId: savedCustomer.id,
-          customerInfo: data
+          customerInfo: {
+            ...data,
+            maritalStatus: maritalStatus
+          }
         }
       }));
     } catch (error) {
       console.error('Error saving customer info:', error);
       if (error.message?.includes('customers_cpf_key')) {
-        setCpfError('Este CPF já está cadastrado no sistema.');
+        setCpfError(`Este ${documentType.toUpperCase()} já está cadastrado no sistema.`);
       } else if (error.message?.includes('Auth session missing')) {
         setAuthError('Sessão expirada. Por favor, faça login novamente.');
       }
@@ -206,12 +231,13 @@ export default function CustomerInfoForm() {
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
-              Estado Civil
+              Estado Civil {documentType === 'cnpj' && <span className="text-gray-500">(opcional para CNPJ)</span>}
             </label>
             <select
               {...register('maritalStatus')}
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
+              <option value="">Selecione o estado civil</option>
               {maritalStatusOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
@@ -226,17 +252,68 @@ export default function CustomerInfoForm() {
           <div className="space-y-2">
             <label className="flex items-center text-sm font-medium text-gray-700">
               <FileText size={18} className="mr-2" />
-              CPF
+              {documentType === 'cpf' ? 'CPF' : 'CNPJ'}
             </label>
-            <InputMask
-              mask="999.999.999-99"
+            <input
+              type="text"
               {...register('cpf')}
               onBlur={(e) => checkCpfExists(e.target.value)}
+              onChange={(e) => {
+                // Remove tudo que não é número
+                let value = e.target.value.replace(/\D/g, '');
+                
+                // Limita a 14 dígitos
+                if (value.length > 14) {
+                  value = value.slice(0, 14);
+                }
+                
+                // Aplica a máscara baseada no comprimento
+                if (value.length <= 11) {
+                  // Máscara CPF: 999.999.999-99
+                  value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+                  if (value.length === 11) {
+                    value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{1})/, '$1.$2.$3-$4');
+                  }
+                  if (value.length === 9) {
+                    value = value.replace(/(\d{3})(\d{3})(\d{1})/, '$1.$2.$3');
+                  }
+                  if (value.length === 7) {
+                    value = value.replace(/(\d{3})(\d{1})/, '$1.$2');
+                  }
+                } else {
+                  // Máscara CNPJ: 99.999.999/9999-99
+                  value = value.replace(/(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})/, '$1.$2.$3/$4-$5');
+                  if (value.length === 12) {
+                    value = value.replace(/(\d{2})(\d{3})(\d{3})(\d{4})/, '$1.$2.$3/$4');
+                  }
+                  if (value.length === 10) {
+                    value = value.replace(/(\d{2})(\d{3})(\d{3})/, '$1.$2.$3');
+                  }
+                  if (value.length === 6) {
+                    value = value.replace(/(\d{2})(\d{3})/, '$1.$2');
+                  }
+                }
+                
+                // Atualiza o valor no formulário
+                setValue('cpf', value);
+                
+                // Detecta o tipo de documento
+                const numbers = value.replace(/\D/g, '');
+                if (numbers.length <= 11) {
+                  setDocumentType('cpf');
+                } else {
+                  setDocumentType('cnpj');
+                }
+              }}
               className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                 cpfError ? 'border-red-500' : ''
               }`}
-              placeholder="000.000.000-00"
+              placeholder={documentType === 'cpf' ? "000.000.000-00" : "00.000.000/0000-00"}
+              maxLength={18} // Permite espaço para a máscara completa do CNPJ
             />
+            <p className="text-xs text-gray-500">
+              Digite CPF (11 dígitos) ou CNPJ (14 dígitos)
+            </p>
             {(errors.cpf || cpfError) && (
               <p className="text-red-500 text-sm flex items-center">
                 <AlertCircle size={16} className="mr-1" />
@@ -344,7 +421,8 @@ export default function CustomerInfoForm() {
             type="button"
             onClick={() => {
               reset({
-                nationality: 'Brasileiro(a)'
+                nationality: 'Brasileiro(a)',
+                maritalStatus: ''
               });
               setCpfError(null);
             }}

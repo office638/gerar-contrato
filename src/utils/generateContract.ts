@@ -131,7 +131,7 @@ export async function generateContract(formData: FormProgress['data']): Promise<
   yPos = addMultiLineText(companyInfo, 20, yPos, 170);
   yPos += 4;
 
-  const clientInfo = `CONTRATANTE: ${formData.customerInfo?.fullName.toUpperCase()}, PORTADOR(A) DO CPF ${formData.customerInfo?.cpf} E RG ${formData.customerInfo?.rg} ${formData.customerInfo?.issuingAuthority.toUpperCase()}, ${formData.customerInfo?.nationality.toUpperCase()}, ${formData.customerInfo?.profession.toUpperCase()}, RESIDENTE E DOMICILIADO(A) EM ${formData.installationLocation?.street.toUpperCase()}, ${formData.installationLocation?.number}, ${formData.installationLocation?.neighborhood.toUpperCase()}, ${formData.installationLocation?.city.toUpperCase()}/${formData.installationLocation?.state}, CEP ${formData.installationLocation?.zipCode}, TELEFONE ${formData.customerInfo?.phone}, EMAIL ${formData.customerInfo?.email}.`;
+  const clientInfo = `CONTRATANTE: ${formData.customerInfo?.fullName.toUpperCase()}, PORTADOR(A) DO CPF/CNPJ ${formData.customerInfo?.cpf} E RG ${formData.customerInfo?.rg} ${formData.customerInfo?.issuingAuthority.toUpperCase()}, ${formData.customerInfo?.nationality.toUpperCase()}, ${formData.customerInfo?.profession.toUpperCase()}, RESIDENTE E DOMICILIADO(A) EM ${formData.installationLocation?.street.toUpperCase()}, ${formData.installationLocation?.number}, ${formData.installationLocation?.neighborhood.toUpperCase()}, ${formData.installationLocation?.city.toUpperCase()}/${formData.installationLocation?.state}, CEP ${formData.installationLocation?.zipCode}, TELEFONE ${formData.customerInfo?.phone}, EMAIL ${formData.customerInfo?.email}.`;
 
 
   yPos = addMultiLineText(clientInfo, 20, yPos, 170);

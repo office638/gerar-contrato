@@ -8,7 +8,7 @@ export const brazilianStates = [
 
 export type CustomerInfo = {
   fullName: string;
-  maritalStatus: 'Single' | 'Married' | 'Divorced' | 'Widowed';
+  maritalStatus?: 'Single' | 'Married' | 'Divorced' | 'Widowed' | '';
   cpf: string;
   rg: string;
   issuingAuthority: string;
@@ -21,6 +21,7 @@ export type CustomerInfo = {
 export type MaritalStatus = {
   value: CustomerInfo['maritalStatus'];
   label: string;
+  translation?: string;
 };
 
 export const maritalStatusOptions: MaritalStatus[] = [
@@ -100,13 +101,14 @@ export type FormProgress = {
     installationLocation?: InstallationLocation;
     technicalConfig?: TechnicalConfig;
     financialTerms?: FinancialTerms;
+    powerOfAttorney?: any;
   };
 };
 
 // Validation schemas
 export const customerInfoSchema = z.object({
   fullName: z.string().min(3).max(100),
-  maritalStatus: z.enum(['Single', 'Married', 'Divorced', 'Widowed']),
+  maritalStatus: z.enum(['Single', 'Married', 'Divorced', 'Widowed', '']).optional(),
   cpf: z.string().regex(/^\d{3}\.\d{3}\.\d{3}-\d{2}$/, 'CPF inválido'),
   rg: z.string().max(20),
   issuingAuthority: z.string().max(50),
